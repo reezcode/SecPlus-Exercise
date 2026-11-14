@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Materi lima domain CompTIA Security+ SY0-701, glosarium, dan pembahasan latihan.">
+<title>Materi Security+ SY0-701 · Study Lab</title>
+<link rel="stylesheet" href="style.css?v=3">
+</head>
+<body class="study-page">
+<a class="skip" href="#main">Lewati ke konten</a>
+<header class="bar shell">
+  <div class="bar-inner"><a class="console-title" href="./">SECURITY+ STUDY LAB</a><span class="header-id">SY0-701 / MATERI</span></div>
+</header>
+<main id="main" class="shell study" tabindex="-1">
+  <h1>Materi Security+</h1>
+  <p class="study-intro">Pelajari lima domain SY0-701, cek istilah, dan bandingkan pilihan jawaban lewat pembahasan tiap soal.</p>
+  <nav class="panel study-index" aria-label="Daftar isi">
+    <h2>Domain ujian</h2>
+    <ol>
+<li><a href="#domain-1" lang="en">General Security Concepts</a> <span class="muted">· 12%</span></li>
+<li><a href="#domain-2" lang="en">Threats, Vulnerabilities, and Mitigations</a> <span class="muted">· 22%</span></li>
+<li><a href="#domain-3" lang="en">Security Architecture</a> <span class="muted">· 18%</span></li>
+<li><a href="#domain-4" lang="en">Security Operations</a> <span class="muted">· 28%</span></li>
+<li><a href="#domain-5" lang="en">Security Program Management and Oversight</a> <span class="muted">· 20%</span></li>
+    </ol>
+    <div class="actions">
+      <a class="primary" href="./#pembahasan-1">Buka pembahasan soal</a>
+      <a class="secondary" href="#glosarium">Glosarium</a>
+      <a class="secondary" href="#referensi">Referensi</a>
+    </div>
+  </nav>
+<section class="panel study-section" id="domain-1"><h2 lang="en">General Security Concepts</h2><p class="muted">Bobot ujian 12% <a href="#ref-1">[1]</a></p>
+<h3>1.1 Kontrol keamanan</h3>
+<p>Satu kontrol bisa dijelaskan dari dua sudut. Kategori menjawab bagaimana kontrol dijalankan. Fungsi menjawab apa pengaruhnya terhadap kejadian. Firewall yang aktif menolak koneksi adalah technical dan preventive. Kamera yang merekam kejadian adalah physical dan detective. Kamera terlihat juga dapat memberi efek deterrent.</p>
+<div class="study-table"><table><thead><tr><th scope="col">Kategori</th><th scope="col">Contoh</th></tr></thead><tbody><tr><th scope="row">Technical</th><td>MFA, enkripsi, firewall dan pemantauan otomatis.</td></tr><tr><th scope="row">Managerial</th><td>Kebijakan, penilaian risiko, persetujuan perubahan.</td></tr><tr><th scope="row">Operational</th><td>Review log oleh analis, pelatihan dan proses offboarding.</td></tr><tr><th scope="row">Physical</th><td>Pagar, badge, bollard, vestibule.</td></tr></tbody></table></div>
+<div class="study-table"><table><thead><tr><th scope="col">Fungsi</th><th scope="col">Petunjuk pada skenario</th></tr></thead><tbody><tr><th scope="row">Preventive</th><td>Menghalangi kejadian, misalnya validasi akses sebelum login.</td></tr><tr><th scope="row">Deterrent</th><td>Mengurangi niat, misalnya tanda bahwa area direkam.</td></tr><tr><th scope="row">Detective</th><td>Menemukan kejadian atau penyimpangan, misalnya alarm sensor.</td></tr><tr><th scope="row">Corrective</th><td>Memulihkan setelah kejadian, misalnya restore sistem.</td></tr><tr><th scope="row">Compensating</th><td>Menurunkan risiko ketika kontrol standar tidak bisa diterapkan.</td></tr><tr><th scope="row">Directive</th><td>Menetapkan perilaku, misalnya acceptable use policy (AUP).</td></tr></tbody></table></div>
+<aside class="study-callout"><strong>Contoh</strong><p>Server lama belum bisa dipatch. Isolasi jaringan membantu sebagai kontrol kompensasi. Catat batas akses, penanggung jawab serta tenggat migrasi.</p></aside>
+<h3>1.2 CIA, AAA dan Zero Trust</h3>
+<p>Confidentiality melindungi siapa yang dapat membaca. Integrity melindungi keutuhan dan keaslian perubahan. Availability memastikan layanan dapat dipakai saat dibutuhkan. Non-repudiation memberi dasar pembuktian asal tindakan, misalnya signature dengan tata kelola kunci yang kuat.</p>
+<p>Authentication memeriksa identitas. Authorization menilai izin melakukan tindakan. Accounting merekam aktivitas serta pemakaian. Dalam Zero Trust, policy engine menentukan akses berdasarkan konteks sesuai kebijakan, policy administrator menerjemahkan keputusan, dan policy enforcement point menjalankannya di jalur akses. Segmentasi dan akses minimal memperkecil dampak jika satu akun atau perangkat bermasalah.</p>
+<p>Bollard menghalangi kendaraan; vestibule mengontrol lalu lintas orang; badge mengaitkan akses dengan identitas; sensor dan CCTV membantu deteksi. Honeypot adalah layanan umpan, honeynet lingkungan umpan, honeyfile file umpan, dan honeytoken penanda yang memicu sinyal jika disentuh. Lihat <a href="#ref-2">[2]</a>.</p>
+<h3>1.3 Change management</h3>
+<p>Alur umum adalah ajukan perubahan, nilai dampak dan dependensi, minta persetujuan, uji, jadwalkan penerapan, lalu verifikasi. Backout plan menjelaskan cara kembali dan kondisi pemicunya. Maintenance window memberi batas waktu kerja; version control menyimpan riwayat revisi; SOP menjaga prosedur pelaksanaan konsisten.</p>
+<aside class="study-callout"><strong>Contoh</strong><p>Aturan firewall yang memutus layanan bisa dicegah dengan pengujian staging yang mereplikasi jalur penting. Persetujuan saja belum memvalidasi hasil kebijakan.</p></aside>
+<h3>1.4 Kriptografi sesuai kebutuhan</h3>
+<p>Enkripsi simetris memakai kunci rahasia bersama dan efisien untuk data besar. Enkripsi asimetris memakai pasangan kunci. Kunci publik dapat membantu membuat kanal aman atau memverifikasi tanda tangan. Signature memberi integritas dan autentisitas berdasarkan signer tepercaya; enkripsi melindungi isi. Hash membentuk digest satu arah dan verifikasi bergantung pada digest pembanding yang dipercaya.</p>
+<div class="study-table"><table><thead><tr><th scope="col">Kebutuhan</th><th scope="col">Pilihan dan batasnya</th></tr></thead><tbody><tr><th scope="row">Simpan password</th><td>KDF password membuat tiap tebakan lebih mahal. Salt unik per akun menggagalkan pencocokan hash yang sama antar akun.</td></tr><tr><th scope="row">Lindungi laptop hilang</th><td>Full disk encryption (FDE) melindungi data tersimpan ketika perangkat mati atau terkunci. TPM mendukung penyimpanan atau pelepasan kunci sesuai kondisi platform.</td></tr><tr><th scope="row">Pulihkan kunci</th><td>Key escrow menyimpan bahan pemulihan, dengan akses berizin dan audit. HSM melindungi operasi serta penyimpanan kunci; KMS mengelola lifecycle kunci.</td></tr><tr><th scope="row">Verifikasi software</th><td>Code signing memeriksa publisher dan integritas paket. Sertifikat, chain, waktu, dan signer harus diperiksa.</td></tr><tr><th scope="row">Verifikasi TLS</th><td>Periksa hostname, masa berlaku, chain ke root tepercaya dan status pencabutan sesuai kebijakan. CRL adalah daftar yang dicabut; OCSP meminta status per sertifikat.</td></tr><tr><th scope="row">Batasi paparan data</th><td>Masking menyamarkan tampilan; tokenization mengganti nilai; steganografi menyembunyikan keberadaan pesan.</td></tr></tbody></table></div>
+<p>PKI mengatur sertifikat, certificate authority (CA), private key, dan trust. Certificate signing request (CSR) meminta sertifikat atas public key. Sertifikat wildcard biasanya mencakup satu tingkat subdomain; SAN mendaftarkan nama yang dicakup secara eksplisit. Rotasi kunci membatasi umur dan cakupan kunci; pencabutan penting jika kunci atau sertifikat tidak lagi dipercaya.</p>
+</section>
+<section class="panel study-section" id="domain-2"><h2 lang="en">Threats, Vulnerabilities, and Mitigations</h2><p class="muted">Bobot ujian 22% <a href="#ref-1">[1]</a></p>
+<h3>2.1 Pelaku dan motif</h3>
+<p>Organized crime cenderung mencari keuntungan; nation-state mengejar tujuan strategis; hacktivist membawa agenda atau keyakinan; insider memanfaatkan akses yang dimiliki atau dipercaya; unskilled attacker biasanya mengandalkan tooling siap pakai. Shadow IT adalah sistem atau layanan yang dipakai di luar pengawasan yang disetujui. Tindakan dan motif kadang tumpang tindih, jadi atribusi butuh bukti.</p>
+<h3>2.2 Vektor dan permukaan serang</h3>
+<p>Vektor adalah jalur masuk, misalnya email, panggilan, aplikasi atau vendor. Attack surface adalah kumpulan jalur yang dapat dijangkau. Permukaan dapat dikurangi dengan menutup layanan, membatasi akses dan menghapus aset usang. Vektor fisik termasuk media lepas serta akses tanpa badge; rantai pasok mencakup perangkat, pemasok software dan penyedia layanan.</p>
+<div class="study-table"><table><thead><tr><th scope="col">Istilah</th><th scope="col">Pembeda</th></tr></thead><tbody><tr><th scope="row">Phishing / smishing / vishing</th><td>Pesan menipu, lalu varian yang memakai SMS atau suara.</td></tr><tr><th scope="row">Spear phishing / whaling</th><td>Pesan yang ditargetkan; whaling menargetkan eksekutif atau pihak bernilai tinggi.</td></tr><tr><th scope="row">BEC / impersonation</th><td>BEC bertumpu pada komunikasi bisnis palsu, sering untuk dana atau akses. Penyamaran identitas adalah taktik yang bisa dipakai di beberapa kanal.</td></tr><tr><th scope="row">Pretexting / watering hole</th><td>Pretext memberi cerita yang membuat permintaan tampak wajar. Watering hole memakai situs yang sering dikunjungi target.</td></tr></tbody></table></div>
+<p>Verifikasi perubahan rekening lewat nomor resmi yang sudah dikenal, pakai persetujuan ganda, dan beri jalur pelaporan yang cepat. Awareness, filter email, dan verifikasi transaksi menutup bagian risiko yang berbeda.</p>
+<h3>2.3 Kelemahan aplikasi, perangkat dan cloud</h3>
+<p>Vulnerability adalah kelemahan yang bisa merugikan aset. Misconfiguration dapat membuka resource tanpa perlindungan. Kelemahan firmware muncul pada software yang terkait perangkat, dan legacy system sering kehilangan dukungan patch. VM escape melintasi batas VM ke host; secret yang bocor pada repo dapat membuka akses lintas lingkungan. Kerentanan supply chain muncul di komponen atau vendor yang dipercaya.</p>
+<p>SQL injection memengaruhi semantik query database. XSS memengaruhi eksekusi konten di browser. CSRF memicu aksi menggunakan sesi korban. Directory traversal menembus batas path. Untuk mencegahnya, gunakan parameterized queries, encoding sesuai konteks, proteksi sesi dan pemeriksaan batas direktori. Untuk upload, validasi ukuran serta jenis dan isolasi tempat penyimpanan. Lihat <a href="#ref-5">[5]</a>.</p>
+<h3>2.4 Membaca indikator tanpa melompat ke kesimpulan</h3>
+<p>Password spraying menunjukkan pola tersebar ke banyak akun; brute force terfokus sering tampak sebagai banyak percobaan terhadap akun sempit. Credential stuffing berkaitan kredensial yang dipakai ulang dari kebocoran; pass-the-hash menyalahgunakan material autentikasi. Peningkatan MFA gagal setelah password sukses menunjukkan perlunya menyelidiki login dan sesi, termasuk kemungkinan kesalahan pengguna.</p>
+<div class="study-table"><table><thead><tr><th scope="col">Sinyal</th><th scope="col">Data pembanding</th></tr></thead><tbody><tr><th scope="row">Banyak trafik dan layanan melambat</th><td>Bandingkan throughput, sumber, kesalahan aplikasi, dan status backend untuk membedakan overload dengan DDoS.</td></tr><tr><th scope="row">Trafik DNS menyimpang</th><td>Korelasikan resolver, nama yang diminta, dan endpoint untuk membedakan aktivitas sah, DNS poisoning, atau exfiltration.</td></tr><tr><th scope="row">Hash file berubah</th><td>Periksa perubahan terotorisasi, baseline, log proses dan paket. Anomali saja belum cukup untuk menyebut rootkit.</td></tr><tr><th scope="row">Trafik keluar dari proses tidak lazim</th><td>Korelasikan executable, parent process, koneksi dan tujuan untuk menilai dugaan C2 atau exfiltration.</td></tr><tr><th scope="row">Ransom note dan file tidak terbaca</th><td>Periksa cakupan host dan akun, isolasi sesuai playbook, dan lindungi salinan pemulihan.</td></tr></tbody></table></div>
+<h3>2.5 Mitigasi berlapis</h3>
+<p>Segmentasi dan least privilege membatasi cakupan. Hardening mengecilkan permukaan serang dengan baseline, patch, penghapusan service yang tidak perlu, dan konfigurasi aman. Allowlist mengendalikan eksekusi software. Isolasi digunakan untuk aset legacy atau endpoint berisiko, termasuk selama investigasi. Nilai efektivitas mitigasi dengan bukti yang bisa dipantau.</p>
+</section>
+<section class="panel study-section" id="domain-3"><h2 lang="en">Security Architecture</h2><p class="muted">Bobot ujian 18% <a href="#ref-1">[1]</a></p>
+<h3>3.1 Pilih model dan batas tanggung jawab</h3>
+<div class="study-table"><table><thead><tr><th scope="col">Model</th><th scope="col">Tanggung jawab yang perlu diperiksa</th></tr></thead><tbody><tr><th scope="row">On-premises</th><td>Tim mengelola fasilitas, jaringan, host, aplikasi, dan data. Kontrol lebih langsung dengan beban operasi lebih besar.</td></tr><tr><th scope="row">IaaS</th><td>Provider menangani infrastruktur fisik dan virtualisasi dasar; pelanggan mengelola guest OS, aplikasi dan data.</td></tr><tr><th scope="row">PaaS / SaaS</th><td>PaaS mengambil lebih banyak tugas runtime; SaaS juga mengelola aplikasi. Pelanggan tetap menangani identitas, izin dan konfigurasi datanya sesuai kontrak.</td></tr><tr><th scope="row">Serverless / IaC</th><td>Serverless mendelegasikan pengelolaan host dan runtime. IaC membuat provisioning berbasis kode, review, dan deployment berulang.</td></tr><tr><th scope="row">VM / container</th><td>VM memakai guest OS. Container berbagi kernel host dan mudah dibuat ulang; image, runtime dan host tetap perlu diamankan.</td></tr><tr><th scope="row">Microservices</th><td>Isolasi dan scaling per layanan bisa lebih mudah. API, identitas layanan, log terdistribusi dan dependensi menambah pekerjaan.</td></tr><tr><th scope="row">IoT / OT / ICS</th><td>Perhatikan safety, kemampuan perangkat, keterlambatan dan patch window. RTOS menangani kebutuhan waktu nyata; SCADA mendukung supervisi proses industri.</td></tr></tbody></table></div>
+<h3>3.2 Desain jaringan dan akses</h3>
+<p>Firewall jaringan mengontrol aliran lintas batas; host firewall mengontrol satu host. NGFW memahami aplikasi lebih baik daripada filter alamat serta port saja; WAF fokus pada HTTP. IDS mendeteksi dan melapor; IPS dapat memblokir inline. VLAN memisahkan jaringan logis, dan aturan antarzona mengendalikan akses. Air gap memakai pemisahan fisik dan tetap memerlukan aturan perpindahan media.</p>
+<p>VPN memberi kanal aman ke jaringan. ZTNA memberi akses lebih sempit ke resource. SASE menggabungkan konektivitas dan fungsi keamanan cloud. NAC atau 802.1X memeriksa akses jaringan berdasarkan identitas dan kebijakan. Bastion atau jump host membatasi jalur admin; DMZ menempatkan layanan publik pada zona perantara. Pilih posisi kontrol berdasarkan trafik yang benar-benar dapat dilihat, termasuk bagian yang terenkripsi.</p>
+<h3>3.3 Merancang perlindungan data</h3>
+<p>At rest mencakup disk dan backup; in transit adalah data bergerak; in use adalah data dalam pemrosesan. Klasifikasi menentukan ketatnya kontrol. Contoh data healthcare bisa sensitive karena privasi dan critical karena dampak operasional bila tidak tersedia. Enkripsi, masking, tokenisasi, segmentasi, permission restriction dan DLP menyelesaikan kebutuhan yang berbeda.</p>
+<p>Data residency menyatakan lokasi data disimpan. Data sovereignty berkaitan dengan yurisdiksi yang berlaku. Geolocation policy memeriksa lokasi akses. Tentukan juga di mana data diolah,</p>
+<p>backup disimpan dan akses admin berasal.</p>
+<h3>3.4 Ketahanan dan disaster recovery</h3>
+<p>High availability (HA) menangani gangguan dengan komponen cadangan, health check, clustering, dan failover. Disaster recovery (DR) memulihkan teknologi setelah gangguan besar. Business continuity (BC) menjaga proses bisnis berjalan, termasuk pekerjaan manual sementara. BIA memetakan dampak, prioritas dan dependensi sehingga target recovery sesuai kebutuhan bisnis. UPS menjembatani waktu singkat; generator memberi daya lebih lama sesuai kapasitas bahan bakar dan perawatan.</p>
+<div class="study-table"><table><thead><tr><th scope="col">Istilah</th><th scope="col">Pertanyaan yang dijawab</th></tr></thead><tbody><tr><th scope="row">RTO</th><td>Berapa lama layanan boleh tidak tersedia? Diukur dari gangguan sampai fungsi yang disepakati kembali.</td></tr><tr><th scope="row">RPO</th><td>Seberapa jauh data boleh mundur dalam waktu? Diukur dari gangguan ke titik data terakhir yang bisa dipulihkan.</td></tr><tr><th scope="row">MTD</th><td>Berapa lama gangguan masih bisa ditoleransi bisnis? Sisakan waktu untuk pekerjaan pemulihan dan validasi proses.</td></tr><tr><th scope="row">MTTR / MTBF</th><td>Rerata waktu memperbaiki atau memulihkan, sesuai definisi metrik; dan rerata waktu antar kegagalan.</td></tr></tbody></table></div>
+<aside class="study-callout"><strong>Contoh garis waktu</strong><p>Gangguan Selasa 12.00. Recovery point Senin 12.00 berarti kehilangan 24 jam data. Layanan pulih Rabu 08.00 berarti downtime 20 jam. Keduanya lulus target 48 jam, dengan asumsi fungsi yang diminta sudah tervalidasi.</p></aside>
+<div class="study-table"><table><thead><tr><th scope="col">Site</th><th scope="col">Isi cadangan, pekerjaan tersisa dan trade-off</th></tr></thead><tbody><tr><th scope="row">Cold</th><td>Ruang, listrik, pendingin dan koneksi dasar. Tim masih perlu menyediakan server, jaringan, software dan restore data. Biaya standby rendah, tetapi pemulihan biasanya paling lambat.</td></tr><tr><th scope="row">Warm</th><td>Infrastruktur dan sebagian atau seluruh perangkat siap, tetapi aktivasi, konfigurasi, provisioning tambahan atau restore masih dibutuhkan. Kesiapan dan biaya di tengah.</td></tr><tr><th scope="row">Hot</th><td>Lingkungan dan kapasitas siap menerima beban cepat, sering dengan data direplikasi. Biaya dan kompleksitas tinggi. Waktu failover serta lag replikasi tetap harus diukur.</td></tr></tbody></table></div>
+<h3>3.4 Mengapa <a href="./#pembahasan-1-q52">Practice Test 1 Q52</a> memilih warm?</h3>
+<p>Skenario memprioritaskan cost-benefit dan target sekitar dua hari untuk downtime serta kehilangan data. Cold punya risiko terlambat jika pengadaan perangkat, penyiapan jaringan, dan restore baru dimulai saat bencana. Hot memberi kesiapan lebih tinggi, tetapi biaya standby dapat berlebihan untuk target tersebut. Real-time recovery adalah kemampuan pemulihan, sementara soal meminta tipe fasilitas cadangan. Warm memberi perangkat yang sudah tersedia dan masih menyisakan waktu untuk mengaktifkan layanan.</p>
+<aside class="study-callout"><strong>Tiga variasi</strong><p><a href="./#pembahasan-3-q53">Test 3 Q53</a> memilih cold ketika biaya minimum menjadi kunci dan keterbatasan konektivitas dapat diterima. <a href="./#pembahasan-3-q9">Test 3 Q9</a> memilih hot ketika operasi harus segera berlanjut. <a href="./#pembahasan-5-q70">Test 5 Q70</a> memilih warm karena hardware dan akses Internet sudah tersedia, meskipun targetnya tetap hemat.</p></aside>
+<div class="study-table"><table><thead><tr><th scope="col">Contoh desain</th><th scope="col">Hasil pengujian dan keputusan untuk target 48 jam</th></tr></thead><tbody><tr><th scope="row">Cold dengan perangkat dipesan saat insiden</th><td>Pengadaan dan penyiapan 4 hari, restore dan validasi 1 hari. Downtime 5 hari melampaui RTO. Backup harian yang masih dapat digunakan bisa memenuhi RPO.</td></tr><tr><th scope="row">Warm dengan server dan koneksi tersedia</th><td>Aktivasi 12 jam, restore dan validasi 24 jam. Downtime 36 jam. Jika backup terverifikasi paling lama 24 jam, kedua target terpenuhi.</td></tr><tr><th scope="row">Hot dengan replikasi dan jalur failover teruji</th><td>Layanan tervalidasi dalam 30 menit. Titik data terakhir tertinggal 5 menit. Kedua target terpenuhi, tetapi manfaat waktu ekstra harus sebanding dengan biaya.</td></tr></tbody></table></div>
+<p>Angka di tabel adalah ilustrasi. Waktu pemulihan diukur dari waktu gangguan, termasuk waktu deklarasi bila belum dihitung. Frekuensi backup membantu menentukan RPO, tetapi yang diuji adalah umur salinan yang benar-benar bisa dipakai.</p>
+<p>Label site tidak menentukan angka RTO atau RPO secara universal. Contoh warm site dapat memenuhi RTO 48 jam tetapi gagal RPO 48 jam jika backup terakhir sudah berumur tiga hari. Hot site dapat gagal RTO bila failover, DNS, identitas, atau dependensi pembayaran belum siap. Cold site bisa cukup bila provisioning terotomasi dan uji restore membuktikan target.</p>
+<div class="study-table"><table><thead><tr><th scope="col">Mekanisme</th><th scope="col">Kegunaan</th></tr></thead><tbody><tr><th scope="row">Full / incremental / differential</th><td>Full memberi salinan dasar. Incremental merekam perubahan sejak backup terakhir, sehingga restore membutuhkan rantai. Differential merekam perubahan sejak full terakhir.</td></tr><tr><th scope="row">Snapshot / backup</th><td>Snapshot adalah titik keadaan dan sering bergantung storage asal. Backup terpisah mengurangi risiko kegagalan sumber yang sama. Uji integritas dan kompatibilitas aplikasi.</td></tr><tr><th scope="row">Replication / journaling</th><td>Replikasi menyalin state ke tempat lain. Journal atau log transaksi memungkinkan replay hingga titik yang tersedia. Korupsi dapat ikut tersebar melalui replikasi.</td></tr><tr><th scope="row">Offsite / immutable</th><td>Offsite melindungi dari gangguan lokasi. Immutable membatasi perubahan atau penghapusan selama periode retensi. Pastikan salinan bisa dipulihkan.</td></tr></tbody></table></div>
+<p>Mulai dari target tiap layanan, hitung waktu deteksi, deklarasi, provisioning, pemulihan, dan validasi. Periksa lag replikasi dan titik restore yang tersedia. Tabletop menguji keputusan; simulated failover menguji urutan dan target; production failover menguji jalur nyata dengan risiko yang harus dikelola. Gunakan hasil pengujian untuk menyesuaikan DRP. Lihat <a href="#ref-3">[3]</a>.</p>
+</section>
+<section class="panel study-section" id="domain-4"><h2 lang="en">Security Operations</h2><p class="muted">Bobot ujian 28% <a href="#ref-1">[1]</a></p>
+<h3>4.1 Hardening perangkat, aplikasi dan jaringan</h3>
+<p>Baseline mendefinisikan keadaan aman yang dapat diperiksa. Kurangi service dan akun bawaan, patch, aktifkan logging dan enkripsi, dan verifikasi perubahan. Endpoint wireless perlu konfigurasi protokol dan kebijakan guest. MDM membantu posture, profile, enkripsi, lock dan wipe. BYOD memakai perangkat pribadi; COPE milik perusahaan dengan pemakaian pribadi; CYOD memberi pilihan perangkat yang disetujui.</p>
+<p>Validasi input sesuai jenis dan format, gunakan output encoding sesuai konteks, amankan cookies, review kode, verifikasi signature dan batasi program yang boleh berjalan. SAST menganalisis source atau artefak tanpa menjalankan aplikasi; DAST melihat perilaku runtime; SCA menginventarisasi risiko dependensi. Pengujian input tidak biasa dilakukan dalam lingkungan yang diotorisasi.</p>
+<h3>4.2 Lifecycle aset</h3>
+<p>Catat perangkat, software, versi, lokasi dan owner; beri baseline sebelum produksi; pantau patch dan perubahan; lalu cabut akses saat pensiun. End of support memengaruhi ketersediaan patch. Pilih clear, purge atau destroy sesuai media dan sensitivitas, lalu simpan bukti disposal. Wiping dapat mendukung reuse bila metode sesuai jenis media dan diverifikasi.</p>
+<h3>4.3 Vulnerability management</h3>
+<p>Temukan aset, identifikasi kelemahan, validasi, prioritaskan, perbaiki atau mitigasi, scan ulang dan laporkan. Credentialed scan melihat konfigurasi internal; non-credentialed scan menilai permukaan yang dapat dijangkau tanpa kredensial. False positive adalah temuan yang dilaporkan tetapi tidak ada; false negative adalah kelemahan nyata yang terlewat.</p>
+<aside class="study-callout"><strong>Prioritas</strong><p>CVE adalah identitas. CVSS menilai severity teknis. Katalog KEV memberi bukti eksploitasi di dunia nyata. Exposure, criticality, efektivitas kontrol dan patch availability menentukan urutan pekerjaan. Lihat <a href="#ref-6">[6]</a> dan <a href="#ref-7">[7]</a>.</p></aside>
+<h3>4.4 Monitoring dan evaluasi alert</h3>
+<p>SIEM mengumpulkan, menormalisasi dan mengorelasikan log. Buat baseline, atur threshold, tinjau data yang hilang dan tuning false positive. Agent-based memberi konteks endpoint; agentless memakai antarmuka yang tersedia. Dashboard cocok untuk tren manajemen; event mentah diperlukan untuk pembuktian. Sinkronisasi jam membantu menyusun urutan kejadian.</p>
+<h3>4.5 Kontrol enterprise</h3>
+<div class="study-table"><table><thead><tr><th scope="col">Kebutuhan</th><th scope="col">Alat dan batas</th></tr></thead><tbody><tr><th scope="row">Perubahan file</th><td>FIM membandingkan file dengan baseline; konfirmasi perubahan terotorisasi.</td></tr><tr><th scope="row">Ancaman endpoint</th><td>EDR melihat proses dan mendukung respons. XDR memperluas korelasi ke sumber lain sesuai platform.</td></tr><tr><th scope="row">Kebocoran data</th><td>DLP memeriksa aliran data sensitif di email, endpoint atau cloud sesuai penempatan.</td></tr><tr><th scope="row">Keamanan email</th><td>SPF memvalidasi sumber pengiriman menurut kebijakan domain envelope, DKIM memverifikasi signature pesan, DMARC menilai alignment dan mengatur kebijakan serta laporan.</td></tr><tr><th scope="row">Web dan DNS</th><td>Web filter membatasi URL atau kategori. DNS sinkhole mengalihkan resolusi domain berbahaya. WAF menyaring permintaan HTTP ke aplikasi.</td></tr><tr><th scope="row">Trafik jaringan</th><td>Firewall, ACL, IDS/IPS dan NAC masing-masing mengelola jalur serta izin yang berbeda.</td></tr></tbody></table></div>
+<h3>4.6 Identitas dan akses</h3>
+<p>Lifecycle joiner, mover, leaver menambah, menyesuaikan, atau mencabut hak. RBAC mengikuti role; ABAC memakai atribut; DAC memberi diskresi pada owner; MAC memaksa label dan clearance. Least privilege memberi hak minimum, sementara separation of duties meminta pemisahan antar keputusan sensitif.</p>
+<p>MFA menggabungkan jenis faktor knowledge, possession atau inherence. TOTP menghasilkan kode berbasis waktu; FIDO2 memakai autentikator yang terikat origin. Conditional access menilai konteks seperti posture. PAM mengelola privileged access melalui vault, just-in-time access, audit serta rotasi. RADIUS mendukung AAA pada akses jaringan. SAML membawa assertion untuk federasi. OAuth mendelegasikan akses ke resource, sedangkan OpenID Connect (OIDC) menambahkan identitas.</p>
+<h3>4.7 Automation dan orchestration</h3>
+<p>Automation menjalankan tugas berulang secara konsisten. Orchestration menggabungkan beberapa alat atau langkah, misalnya mengambil konteks alert, meminta persetujuan dan mengisolasi perangkat melalui SOAR. Terapkan hak minimum, log audit, idempotency, dan jalur fallback untuk tindakan berdampak tinggi.</p>
+<h3>4.8 Incident response</h3>
+<p>Persiapan menetapkan peran, kontak, skenario, akses alat dan backup. Detection dan analysis memvalidasi gejala. Containment membatasi dampak. Eradication menyingkirkan penyebab aktif, lalu recovery mengembalikan layanan dan memantau indikator. Lessons learned memperbaiki prosedur serta kontrol. NIST SP 800-61r3 menghubungkan persiapan ke Govern, Identify dan Protect serta respons ke Detect, Respond dan Recover. Terminologi soal bisa memakai siklus klasik. Lihat <a href="#ref-4">[4]</a>.</p>
+<h3>4.9 Sumber bukti dan forensik</h3>
+<div class="study-table"><table><thead><tr><th scope="col">Sumber</th><th scope="col">Pertanyaan investigasi</th></tr></thead><tbody><tr><th scope="row">Endpoint / EDR</th><td>Proses mana berjalan dan apa yang dilakukannya?</td></tr><tr><th scope="row">Firewall / flow</th><td>Koneksi ke mana, berapa volumenya, dan apakah diizinkan?</td></tr><tr><th scope="row">PCAP / DNS</th><td>Apa detail paket yang tersedia, atau domain apa yang di-resolve?</td></tr><tr><th scope="row">Application / identity log</th><td>Akun mana memanggil fitur, melakukan transaksi, atau gagal MFA?</td></tr><tr><th scope="row">FIM / metadata</th><td>File apa berubah, kapan, dan adakah konteks asal?</td></tr></tbody></table></div>
+<p>Preservation menjaga bukti utuh; chain of custody mencatat siapa yang memegang dan memindahkan bukti. Salinan serta hash terverifikasi membantu membuktikan keutuhan. RAM punya volatilitas tinggi. Legal hold mencegah penghapusan materi dalam cakupan sengketa atau investigasi yang ditetapkan.</p>
+</section>
+<section class="panel study-section" id="domain-5"><h2 lang="en">Security Program Management and Oversight</h2><p class="muted">Bobot ujian 20% <a href="#ref-1">[1]</a></p>
+<h3>5.1 Governance</h3>
+<p>Policy menetapkan aturan dan tujuan; standard menetapkan persyaratan terukur; procedure menjelaskan langkah; guideline memberi arahan fleksibel. AUP memuat penggunaan yang diperbolehkan. Governance menetapkan owner, akuntabilitas, pelaporan, dan review berkala. Gap analysis melihat jarak antara kondisi sekarang dan kriteria target.</p>
+<h3>5.2 Risk management</h3>
+<p>Identifikasi aset, threat, vulnerability dan impact. Nilai likelihood serta severity, tentukan owner dan catat keputusan dalam risk register. Inherent risk dinilai sebelum kontrol; residual setelah kontrol. Appetite adalah tingkat risiko yang bersedia diambil; tolerance batas variasi yang masih diterima; threshold memicu keputusan. Respons utama adalah avoid, mitigate, transfer dan accept.</p>
+<aside class="study-callout"><strong>Contoh hitung</strong><p>Kerugian satu insiden US$15.000, perkiraan dua kali dalam tiga tahun. SLE = US$15.000, ARO = 2/3 per tahun, ALE = SLE × ARO = US$10.000 per tahun. Ini estimasi untuk keputusan, bukan prediksi pasti.</p></aside>
+<h3>5.3 Third-party risk</h3>
+<p>Due diligence memeriksa vendor sebelum kontrak; monitoring memeriksa perubahan risiko sepanjang hubungan. Tinjau layanan, akses, lokasi data, subprocessor, notifikasi insiden, hak audit, dan exit plan. Supply chain analysis mencakup provenance komponen dan kanal pengadaan.</p>
+<div class="study-table"><table><thead><tr><th scope="col">Dokumen</th><th scope="col">Fungsi utama</th></tr></thead><tbody><tr><th scope="row">SLA</th><td>Standar layanan seperti uptime, waktu respons dan penanganan jika target gagal.</td></tr><tr><th scope="row">SOW</th><td>Ruang lingkup, biaya, jadwal dan deliverable pekerjaan tertentu.</td></tr><tr><th scope="row">MSA / NDA</th><td>MSA memberi syarat umum hubungan jasa. NDA mengatur kerahasiaan.</td></tr><tr><th scope="row">ROE / hak audit</th><td>ROE menetapkan batas pengujian yang diotorisasi. Hak audit memberi dasar pemeriksaan vendor.</td></tr></tbody></table></div>
+<h3>5.4 Compliance dan privasi</h3>
+<p>Kepatuhan menghubungkan persyaratan yang berlaku, bukti kontrol dan tindakan remediasi. Pelanggaran bisa menghasilkan audit findings, kewajiban perbaikan, denda atau dampak reputasi sesuai konteks. Data subject adalah orang terkait; controller menentukan tujuan dan cara pemrosesan; processor menjalankan pemrosesan sesuai instruksi; custodian mengelola proteksi dan retensi sehari-hari. Bedakan kebutuhan menyimpan data, kemampuan menghapus, dan legal hold.</p>
+<h3>5.5 Audit dan assessment</h3>
+<p>Internal audit menilai organisasi dari dalam, external audit memberi independensi lebih tinggi, dan attestation memberi pernyataan berbasis kriteria. SOC 2 Type 1 menilai desain pada satu waktu; Type 2 menilai desain dan efektivitas operasi selama periode. Vulnerability assessment mencari kelemahan; pengujian terotorisasi menilai dampak dalam scope; red team menguji ketahanan, blue team membela dan purple menyelaraskan keduanya.</p>
+<h3>5.6 Awareness dan perilaku</h3>
+<p>Onboarding membangun kebiasaan dasar; pelatihan berkala mengulang dan memperbarui ancaman yang relevan. Beri jalur pelaporan jelas. Gunakan simulasi untuk umpan balik dan ukur kualitas serta kecepatan pelaporan, bukan hanya click rate. Verifikasi praktis untuk perubahan rekening dan permintaan admin harus masuk proses kerja sehari-hari.</p>
+</section>
+  <section class="panel study-section" id="glosarium">
+    <h2>Glosarium</h2>
+    <dl class="study-glossary">
+<div><dt>AAA</dt><dd>Authentication, Authorization, Accounting. Memeriksa identitas, memberi hak, lalu mencatat aktivitas.</dd></div>
+<div><dt>ABAC</dt><dd>Attribute-Based Access Control. Izin ditentukan atribut pengguna, perangkat, objek atau konteks.</dd></div>
+<div><dt>ACL</dt><dd>Access Control List. Daftar aturan akses ke resource atau aliran jaringan.</dd></div>
+<div><dt>AD / LDAP</dt><dd>Active Directory adalah layanan identitas dan direktori Microsoft. Lightweight Directory Access Protocol dipakai untuk mengakses direktori.</dd></div>
+<div><dt>Air gap</dt><dd>Pemisahan fisik sistem dari jaringan lain. Kontrol transfer media tetap relevan.</dd></div>
+<div><dt>ALE</dt><dd>Annualized Loss Expectancy. Estimasi kerugian per tahun, hasil SLE dikali ARO.</dd></div>
+<div><dt>Allowlist</dt><dd>Daftar program, alamat atau tindakan yang boleh dipakai menurut kebijakan.</dd></div>
+<div><dt>ARO</dt><dd>Annualized Rate of Occurrence. Perkiraan jumlah kejadian per tahun.</dd></div>
+<div><dt>ARP</dt><dd>Address Resolution Protocol. Pemetaan alamat IPv4 ke alamat link-layer pada jaringan lokal.</dd></div>
+<div><dt>Attack surface</dt><dd>Jumlah dan cakupan titik yang dapat dijangkau untuk memengaruhi sistem.</dd></div>
+<div><dt>Attestation</dt><dd>Pernyataan assurance berdasarkan kriteria dan bukti yang ditetapkan.</dd></div>
+<div><dt>AUP</dt><dd>Acceptable Use Policy. Aturan penggunaan sumber daya organisasi.</dd></div>
+<div><dt>Authentication</dt><dd>Pemeriksaan identitas pengguna, perangkat atau layanan.</dd></div>
+<div><dt>Authorization</dt><dd>Keputusan apakah identitas boleh mengakses resource atau melakukan aksi.</dd></div>
+<div><dt>Availability</dt><dd>Kemampuan menggunakan data atau layanan saat dibutuhkan.</dd></div>
+<div><dt>Bastion / jump host</dt><dd>Host yang menjadi titik masuk terbatas untuk administrasi.</dd></div>
+<div><dt>BCP</dt><dd>Business Continuity Plan. Rencana menjaga fungsi bisnis saat gangguan.</dd></div>
+<div><dt>BEC</dt><dd>Business Email Compromise. Manipulasi komunikasi bisnis untuk memperoleh dana, akses atau data.</dd></div>
+<div><dt>BIA</dt><dd>Business Impact Analysis. Analisis dampak gangguan untuk menentukan prioritas dan target pemulihan.</dd></div>
+<div><dt>BPA</dt><dd>Business Partners Agreement. Kesepakatan peran atau tanggung jawab antarmitra bisnis.</dd></div>
+<div><dt>BYOD / COPE / CYOD</dt><dd>Perangkat pribadi untuk kerja; perangkat milik perusahaan yang mengizinkan penggunaan pribadi; perangkat dipilih dari daftar yang disetujui.</dd></div>
+<div><dt>C2</dt><dd>Command and Control. Komunikasi antara pihak pengendali dan sistem yang telah terkompromi.</dd></div>
+<div><dt>CA</dt><dd>Certificate Authority. Pihak yang menerbitkan dan menandatangani sertifikat.</dd></div>
+<div><dt>CA chain / truststore</dt><dd>Rantai sertifikat menghubungkan leaf dan intermediate ke trust anchor. Truststore menyimpan anchor yang dipercaya.</dd></div>
+<div><dt>Captive portal</dt><dd>Halaman yang muncul sebelum akses jaringan diteruskan, misalnya untuk menyetujui syarat Wi-Fi tamu.</dd></div>
+<div><dt>CCTV</dt><dd>Closed-Circuit Television. Sistem kamera untuk pemantauan dan rekaman area.</dd></div>
+<div><dt>Chain of custody</dt><dd>Catatan penguasaan, perpindahan, waktu, dan penanganan bukti.</dd></div>
+<div><dt>CIA</dt><dd>Confidentiality, Integrity, Availability. Tiga sasaran dasar keamanan informasi.</dd></div>
+<div><dt>CIRT / CSIRT</dt><dd>Computer Incident Response Team atau Computer Security Incident Response Team. Tim yang mengoordinasi penanganan insiden.</dd></div>
+<div><dt>Cloud region / zone</dt><dd>Region adalah kelompok lokasi geografis provider. Availability zone adalah batas kegagalan di dalam suatu region menurut desain provider.</dd></div>
+<div><dt>Clustering</dt><dd>Sekelompok sistem yang bekerja bersama untuk kapasitas atau ketersediaan, tergantung desain.</dd></div>
+<div><dt>Cold site</dt><dd>Lokasi recovery berisi infrastruktur dasar; workload masih perlu disiapkan.</dd></div>
+<div><dt>Compensating control</dt><dd>Pengamanan pengganti yang menurunkan risiko ketika kontrol standar belum bisa diterapkan.</dd></div>
+<div><dt>Conditional access</dt><dd>Kebijakan yang memutus akses berdasar sinyal seperti identitas, perangkat, lokasi atau risiko.</dd></div>
+<div><dt>Confidentiality</dt><dd>Perlindungan data dari pengungkapan atau pembacaan tak sah.</dd></div>
+<div><dt>CRL</dt><dd>Certificate Revocation List. Daftar sertifikat yang telah dicabut oleh penerbit.</dd></div>
+<div><dt>CSR</dt><dd>Certificate Signing Request. Permintaan sertifikat yang membawa public key dan informasi pemohon.</dd></div>
+<div><dt>CSRF</dt><dd>Cross-Site Request Forgery. Pemicu aksi tak diinginkan melalui sesi pengguna yang aktif.</dd></div>
+<div><dt>CVE</dt><dd>Common Vulnerabilities and Exposures. Identifier untuk kelemahan yang dipublikasikan.</dd></div>
+<div><dt>CVSS</dt><dd>Common Vulnerability Scoring System. Penilaian tingkat keparahan teknis kelemahan.</dd></div>
+<div><dt>DAC / MAC</dt><dd>Discretionary Access Control mendelegasikan keputusan tertentu kepada owner. Mandatory Access Control menegakkan label dan clearance.</dd></div>
+<div><dt>DAST</dt><dd>Dynamic Application Security Testing. Pengujian terhadap aplikasi yang sedang berjalan.</dd></div>
+<div><dt>DDoS / DoS</dt><dd>Denial of service dari sumber terdistribusi atau gangguan ketersediaan secara umum.</dd></div>
+<div><dt>DLP</dt><dd>Data Loss Prevention. Pengawasan dan pengendalian aliran data sensitif.</dd></div>
+<div><dt>DMARC / DKIM / SPF</dt><dd>DMARC menerapkan alignment dan kebijakan domain. DKIM memeriksa signature. SPF menguji sumber pengiriman yang diizinkan oleh domain envelope.</dd></div>
+<div><dt>DMZ</dt><dd>Demilitarized Zone. Segmen perantara untuk layanan yang memerlukan paparan ke jaringan lain.</dd></div>
+<div><dt>DNS / AXFR</dt><dd>Domain Name System membantu memetakan nama ke informasi jaringan. AXFR adalah transfer penuh zona DNS.</dd></div>
+<div><dt>DNS filtering / web filtering</dt><dd>DNS filtering memutus resolusi nama berdasarkan kebijakan. Web filtering menilai tujuan atau konten permintaan web dalam cakupan inspeksi.</dd></div>
+<div><dt>DNS poisoning</dt><dd>Manipulasi data resolusi sehingga nama mengarah ke informasi yang salah.</dd></div>
+<div><dt>DNS sinkhole</dt><dd>Tujuan aman untuk mengalihkan permintaan domain berbahaya dan mengamati sumbernya.</dd></div>
+<div><dt>DRP</dt><dd>Disaster Recovery Plan. Prosedur memulihkan teknologi saat gangguan besar.</dd></div>
+<div><dt>EAP / PEAP / LEAP</dt><dd>Extensible Authentication Protocol adalah kerangka autentikasi. PEAP membungkus pertukaran dalam TLS. LEAP merupakan metode lama.</dd></div>
+<div><dt>EDR / XDR</dt><dd>Endpoint Detection and Response berfokus pada endpoint. Extended Detection and Response memperluas deteksi dan korelasi lintas sumber.</dd></div>
+<div><dt>EOL / EOS</dt><dd>End of Life dan End of Support. Tahap vendor mengakhiri lifecycle atau menghentikan dukungan menurut jadwalnya.</dd></div>
+<div><dt>EPP</dt><dd>Endpoint Protection Platform. Kontrol endpoint yang berfokus pada pencegahan dan proteksi, sering terintegrasi dengan EDR.</dd></div>
+<div><dt>Escrow</dt><dd>Penitipan kunci atau bahan pemulihan yang hanya dapat diakses lewat prosedur tertentu.</dd></div>
+<div><dt>Exfiltration</dt><dd>Pemindahan data ke luar batas yang diotorisasi.</dd></div>
+<div><dt>EXIF</dt><dd>Exchangeable Image File Format. Metadata gambar seperti waktu, konfigurasi kamera, dan koordinat bila tersedia.</dd></div>
+<div><dt>Failover / failback</dt><dd>Beralih ke sistem cadangan dan kembali ke sistem primer setelah siap.</dd></div>
+<div><dt>False positive / false negative</dt><dd>Alert atau temuan salah yang muncul, dan masalah nyata yang tidak terdeteksi.</dd></div>
+<div><dt>FDE</dt><dd>Full Disk Encryption. Enkripsi seluruh disk atau volume yang dikelola sebagai proteksi perangkat.</dd></div>
+<div><dt>Federation</dt><dd>Hubungan trust lintas sistem yang membuat layanan bisa menerima bukti identitas dari IdP.</dd></div>
+<div><dt>FIDO2</dt><dd>Standar autentikasi public key yang dapat mengikat kredensial ke origin layanan.</dd></div>
+<div><dt>FIM</dt><dd>File Integrity Monitoring. Deteksi perubahan file melalui pembandingan atribut atau digest.</dd></div>
+<div><dt>Firmware</dt><dd>Software yang tertanam dekat perangkat keras, misalnya BIOS atau UEFI.</dd></div>
+<div><dt>FTP</dt><dd>File Transfer Protocol. FTP dasar mengirim data dan kredensial tanpa perlindungan kanal bawaan.</dd></div>
+<div><dt>Fuzzing</dt><dd>Uji ketahanan terhadap input yang bervariasi atau tidak terduga di lingkungan terotorisasi.</dd></div>
+<div><dt>GDPR</dt><dd>General Data Protection Regulation. Peraturan Uni Eropa tentang pemrosesan data pribadi dalam cakupannya.</dd></div>
+<div><dt>GPO</dt><dd>Group Policy Object. Kumpulan pengaturan terpusat dalam ekosistem Windows.</dd></div>
+<div><dt>GRC</dt><dd>Governance, Risk, and Compliance. Pengelolaan tata kelola, risiko, dan kepatuhan.</dd></div>
+<div><dt>HA</dt><dd>High Availability. Desain agar layanan bertahan saat terjadi kegagalan komponen.</dd></div>
+<div><dt>Hash / KDF / salt</dt><dd>Hash membuat digest satu arah. Key Derivation Function password menaikkan biaya tebakan. Salt adalah nilai unik yang ikut diproses.</dd></div>
+<div><dt>Honeypot / honeyfile / honeytoken</dt><dd>Resource, file, atau penanda umpan yang memberi sinyal ketika disentuh.</dd></div>
+<div><dt>Hot site</dt><dd>Lingkungan recovery lebih siap menerima beban secara cepat, sering dengan replikasi data.</dd></div>
+<div><dt>HSM / KMS</dt><dd>Hardware Security Module melindungi operasi dan material kunci. Key Management Service mengelola lifecycle serta pengendalian akses kunci.</dd></div>
+<div><dt>HTTPS / TLS</dt><dd>HTTPS membawa HTTP melalui Transport Layer Security untuk melindungi kanal.</dd></div>
+<div><dt>IaaS / PaaS / SaaS</dt><dd>Infrastructure, Platform, dan Software as a Service. Cakupan tanggung jawab provider meningkat dari infrastruktur ke platform lalu aplikasi.</dd></div>
+<div><dt>IaC</dt><dd>Infrastructure as Code. Provisioning dan pengelolaan resource melalui definisi yang dapat dibaca dan direview.</dd></div>
+<div><dt>IdP</dt><dd>Identity Provider. Pihak yang mengautentikasi pengguna dan memberi bukti identitas ke layanan.</dd></div>
+<div><dt>IDS / IPS</dt><dd>Intrusion Detection System mengamati serta memberi alert. Intrusion Prevention System dapat menahan trafik secara inline.</dd></div>
+<div><dt>Integrity</dt><dd>Keutuhan dan keterpercayaan data atau sistem terhadap perubahan tanpa izin.</dd></div>
+<div><dt>IoC</dt><dd>Indicator of Compromise. Tanda teknis yang dapat membantu investigasi kompromi.</dd></div>
+<div><dt>IOC / IOB</dt><dd>Indicator of Compromise adalah petunjuk kompromi. Indikator perilaku menggambarkan aktivitas yang perlu diselidiki.</dd></div>
+<div><dt>IoT / OT / ICS</dt><dd>Internet of Things, Operational Technology, dan Industrial Control System. OT mengelola proses fisik; ICS mengendalikan proses industri.</dd></div>
+<div><dt>IPsec</dt><dd>Internet Protocol Security. Perlindungan pada lapisan IP, termasuk untuk VPN site-to-site.</dd></div>
+<div><dt>KEV</dt><dd>Known Exploited Vulnerabilities. Katalog CISA untuk kelemahan dengan bukti eksploitasi di dunia nyata.</dd></div>
+<div><dt>LDAPS</dt><dd>LDAP melalui TLS untuk komunikasi layanan direktori.</dd></div>
+<div><dt>Least privilege</dt><dd>Pemberian hak minimum untuk tugas dan waktu yang diperlukan.</dd></div>
+<div><dt>Legal hold</dt><dd>Penundaan penghapusan rutin materi yang termasuk dalam kebutuhan penyimpanan bukti.</dd></div>
+<div><dt>Load balancing</dt><dd>Pembagian trafik ke beberapa target, biasanya dengan health check.</dd></div>
+<div><dt>Masking / tokenization</dt><dd>Masking menyamarkan yang ditampilkan. Tokenization mengganti nilai dengan token untuk proses tertentu.</dd></div>
+<div><dt>MDM</dt><dd>Mobile Device Management. Pengelolaan kebijakan, konfigurasi dan tindakan terhadap perangkat mobile.</dd></div>
+<div><dt>MFA</dt><dd>Multi-Factor Authentication. Verifikasi dengan setidaknya dua jenis faktor berbeda.</dd></div>
+<div><dt>MSA / NDA</dt><dd>Master Services Agreement menetapkan syarat umum; Non-Disclosure Agreement menetapkan kerahasiaan.</dd></div>
+<div><dt>MTBF / MTTR</dt><dd>Mean Time Between Failures. Mean Time to Repair, Recover atau Restore sesuai definisi metrik.</dd></div>
+<div><dt>MTD</dt><dd>Maximum Tolerable Downtime. Batas toleransi gangguan bagi proses bisnis.</dd></div>
+<div><dt>NAC</dt><dd>Network Access Control. Menilai dan menegakkan akses jaringan untuk pengguna atau perangkat.</dd></div>
+<div><dt>NGFW</dt><dd>Next-Generation Firewall. Firewall dengan kemampuan analisis aplikasi dan inspeksi tambahan.</dd></div>
+<div><dt>Non-repudiation</dt><dd>Bukti yang mendukung atribusi tindakan dan membatasi kemampuan menyangkalnya.</dd></div>
+<div><dt>NTLM</dt><dd>Keluarga protokol autentikasi lama Microsoft. Material autentikasi perlu dilindungi; batasi penggunaan sesuai kompatibilitas.</dd></div>
+<div><dt>OAuth / OIDC</dt><dd>OAuth mendelegasikan otorisasi. OpenID Connect menambah lapisan identitas di atas OAuth.</dd></div>
+<div><dt>OCSP</dt><dd>Online Certificate Status Protocol. Permintaan status pencabutan sertifikat tertentu.</dd></div>
+<div><dt>OSINT</dt><dd>Open-Source Intelligence. Pengumpulan serta analisis informasi dari sumber publik.</dd></div>
+<div><dt>OU</dt><dd>Organizational Unit. Pengelompokan objek direktori untuk administrasi dan kebijakan.</dd></div>
+<div><dt>PAM</dt><dd>Privileged Access Management. Pengelolaan akun, izin, secret dan sesi dengan hak istimewa.</dd></div>
+<div><dt>PCAP</dt><dd>Packet capture. Rekaman paket jaringan untuk analisis, bergantung cakupan dan visibility.</dd></div>
+<div><dt>PCI DSS</dt><dd>Payment Card Industry Data Security Standard. Persyaratan keamanan untuk lingkungan data akun pembayaran dalam cakupannya.</dd></div>
+<div><dt>PE / PA / PEP</dt><dd>Policy Engine memutuskan, Policy Administrator mengoordinasi keputusan, Policy Enforcement Point menegakkan kebijakan akses.</dd></div>
+<div><dt>PHI / PII</dt><dd>Protected Health Information dan Personally Identifiable Information. Makna dan kewajibannya mengikuti konteks yang berlaku.</dd></div>
+<div><dt>PKI</dt><dd>Public Key Infrastructure. Kerangka sertifikat, penerbit, kepercayaan dan pengelolaan kunci publik.</dd></div>
+<div><dt>RADIUS</dt><dd>Remote Authentication Dial-In User Service. Protokol AAA yang umum pada akses jaringan.</dd></div>
+<div><dt>RBAC</dt><dd>Role-Based Access Control. Hak diberikan melalui role.</dd></div>
+<div><dt>RCA</dt><dd>Root Cause Analysis. Analisis penyebab dasar kejadian dan tindakan perbaikan.</dd></div>
+<div><dt>RDP</dt><dd>Remote Desktop Protocol. Akses desktop jarak jauh, biasanya Windows; batasi paparan dan otorisasi.</dd></div>
+<div><dt>Residual risk</dt><dd>Risiko yang tersisa setelah pengamanan diterapkan.</dd></div>
+<div><dt>Risk register</dt><dd>Catatan risiko, owner, dampak, tindakan, tenggat dan status.</dd></div>
+<div><dt>ROE</dt><dd>Rules of Engagement. Batas dan aturan kegiatan pengujian yang diotorisasi.</dd></div>
+<div><dt>RPO</dt><dd>Recovery Point Objective. Batas umur titik pemulihan data yang dapat diterima saat gangguan.</dd></div>
+<div><dt>RTO</dt><dd>Recovery Time Objective. Target batas waktu agar fungsi kembali setelah gangguan.</dd></div>
+<div><dt>RTOS / SCADA</dt><dd>Real-Time Operating System dan Supervisory Control and Data Acquisition.</dd></div>
+<div><dt>RTP / SIP / VoIP</dt><dd>Real-time Transport Protocol membawa media. Session Initiation Protocol membantu pengaturan panggilan. Voice over IP membawa suara melalui jaringan IP.</dd></div>
+<div><dt>SAML</dt><dd>Security Assertion Markup Language. Pertukaran assertion identitas, sering dipakai untuk federasi SSO.</dd></div>
+<div><dt>SAN</dt><dd>Subject Alternative Name. Daftar identitas, seperti nama DNS, yang tercakup dalam sertifikat.</dd></div>
+<div><dt>Sanitization</dt><dd>Proses membuat pemulihan data lama tidak praktis untuk tingkat upaya yang dituju.</dd></div>
+<div><dt>SASE</dt><dd>Secure Access Service Edge. Penggabungan konektivitas dan kemampuan keamanan melalui layanan cloud.</dd></div>
+<div><dt>SAST / DAST / SCA</dt><dd>Pengujian aplikasi statis, pengujian saat runtime, dan analisis komponen/dependensi.</dd></div>
+<div><dt>SAST / SCA</dt><dd>Static Application Security Testing memeriksa kode atau artefak tanpa menjalankan aplikasi. Software Composition Analysis menilai dependensi.</dd></div>
+<div><dt>SCAP</dt><dd>Security Content Automation Protocol. Standar otomasi informasi dan pemeriksaan konfigurasi atau kelemahan.</dd></div>
+<div><dt>SDLC</dt><dd>Software Development Life Cycle. Tahap perencanaan, pengembangan, pengujian, rilis, dan perawatan.</dd></div>
+<div><dt>SDN / SD-WAN</dt><dd>Software-Defined Networking memisahkan pengelolaan kebijakan dari forwarding. SD-WAN mengelola konektivitas WAN melalui kebijakan software.</dd></div>
+<div><dt>SHA-256 / 3DES</dt><dd>SHA-256 adalah fungsi hash. Triple DES adalah cipher simetris lama.</dd></div>
+<div><dt>Sideloading / jailbreaking</dt><dd>Sideloading memasang aplikasi lewat kanal alternatif. Jailbreaking menghapus batas software platform.</dd></div>
+<div><dt>SIEM</dt><dd>Security Information and Event Management. Pengumpulan, normalisasi, korelasi, dan alerting dari log.</dd></div>
+<div><dt>SLA / SOW</dt><dd>Service-Level Agreement menetapkan target layanan. Statement of Work merinci pekerjaan dan deliverable.</dd></div>
+<div><dt>SLE</dt><dd>Single Loss Expectancy. Estimasi kerugian akibat satu kejadian.</dd></div>
+<div><dt>Snapshot / journal</dt><dd>Snapshot merekam keadaan pada titik waktu. Journal merekam rangkaian perubahan yang dapat dipakai saat recovery.</dd></div>
+<div><dt>SOAR</dt><dd>Security Orchestration, Automation and Response. Workflow yang menghubungkan alat dan keputusan respons.</dd></div>
+<div><dt>SOC</dt><dd>Security Operations Center. Fungsi pemantauan dan respons keamanan organisasi.</dd></div>
+<div><dt>SOC 2</dt><dd>System and Organization Controls 2. Pelaporan assurance layanan berdasarkan kriteria yang relevan.</dd></div>
+<div><dt>SOP</dt><dd>Standard Operating Procedure. Instruksi baku untuk pekerjaan berulang.</dd></div>
+<div><dt>SPF envelope sender</dt><dd>Identitas pengirim pada lapisan SMTP yang diperiksa SPF. Alamat yang terlihat di kolom From bisa berbeda.</dd></div>
+<div><dt>SPOF</dt><dd>Single Point of Failure. Satu dependensi yang bila gagal dapat menghentikan fungsi.</dd></div>
+<div><dt>SQLi / XSS</dt><dd>SQL injection berdampak pada query database. Cross-site scripting berdampak pada konten yang dijalankan browser.</dd></div>
+<div><dt>SSH / SFTP / FTPS</dt><dd>SSH memberi kanal admin aman. SFTP berjalan di atas SSH. FTPS memberi proteksi TLS pada FTP.</dd></div>
+<div><dt>SSH host key</dt><dd>Kunci yang dipakai klien untuk memverifikasi identitas server SSH.</dd></div>
+<div><dt>SSO</dt><dd>Single Sign-On. Satu sesi autentikasi memberi akses ke beberapa layanan yang terhubung.</dd></div>
+<div><dt>Tabletop</dt><dd>Latihan diskusi berbasis skenario untuk menguji peran dan keputusan.</dd></div>
+<div><dt>TOTP</dt><dd>Time-Based One-Time Password. Kode sekali pakai yang berubah berdasarkan waktu.</dd></div>
+<div><dt>TPM</dt><dd>Trusted Platform Module. Komponen yang membantu melindungi kunci dan pengukuran keadaan platform.</dd></div>
+<div><dt>UBA / UEBA</dt><dd>User Behavior Analytics dan User and Entity Behavior Analytics.</dd></div>
+<div><dt>UPS</dt><dd>Uninterruptible Power Supply. Daya cadangan jangka pendek saat suplai utama terputus.</dd></div>
+<div><dt>UTM</dt><dd>Unified Threat Management. Penggabungan beberapa fungsi keamanan, bergantung fitur produk.</dd></div>
+<div><dt>VLAN / VPN</dt><dd>Virtual LAN memisahkan jaringan secara logis. Virtual Private Network membuat kanal privat melalui jaringan lain.</dd></div>
+<div><dt>WAF</dt><dd>Web Application Firewall. Pengamanan yang menganalisis dan memfilter trafik HTTP aplikasi.</dd></div>
+<div><dt>WAN</dt><dd>Wide Area Network. Konektivitas jaringan antar lokasi yang berjauhan.</dd></div>
+<div><dt>Warm site</dt><dd>Lokasi recovery dengan peralatan tersedia dan pekerjaan aktivasi atau pemulihan masih diperlukan.</dd></div>
+<div><dt>WPA3 / 802.1X</dt><dd>WPA3 adalah generasi proteksi Wi-Fi. 802.1X menyediakan kerangka kontrol akses port berbasis autentikasi.</dd></div>
+<div><dt>Zero Trust / ZTNA</dt><dd>Zero Trust mengevaluasi akses terhadap resource secara eksplisit. Zero Trust Network Access menerapkan akses terkontrol per aplikasi atau resource.</dd></div>
+    </dl>
+  </section>
+  <section class="panel study-section" id="referensi">
+    <h2>Referensi</h2>
+    <ol class="study-references">
+<li id="ref-1"><a href="https://www.comptia.jp/pdf/CompTIA%20Security%2B%20SY0-701%20Exam%20Objectives.pdf">CompTIA, Security+ SY0-701 Exam Objectives</a><p>Domain, bobot dan ruang lingkup ujian.</p></li>
+<li id="ref-2"><a href="https://csrc.nist.gov/pubs/sp/800/207/final">NIST SP 800-207, Zero Trust Architecture</a><p>Prinsip Zero Trust dan fungsi Policy Engine, Administrator, serta Enforcement Point.</p></li>
+<li id="ref-3"><a href="https://csrc.nist.gov/pubs/sp/800/34/r1/upd1/final">NIST SP 800-34 Rev. 1, Contingency Planning Guide</a><p>Business impact analysis, target recovery dan alternate sites, terutama bagian 3.4.3.</p></li>
+<li id="ref-4"><a href="https://csrc.nist.gov/pubs/sp/800/61/r3/final">NIST SP 800-61 Rev. 3, Incident Response</a><p>Incident response dalam tata kelola risiko dan CSF 2.0.</p></li>
+<li id="ref-5"><a href="https://owasp.org/projects/top-ten">OWASP Top 10</a><p>Rujukan kategori risiko keamanan aplikasi web.</p></li>
+<li id="ref-6"><a href="https://www.first.org/cvss/specification-document">FIRST, CVSS Specification</a><p>Metode penilaian tingkat keparahan kelemahan.</p></li>
+<li id="ref-7"><a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog">CISA, Known Exploited Vulnerabilities Catalog</a><p>Katalog kerentanan dengan bukti eksploitasi di dunia nyata.</p></li>
+<li id="ref-8"><a href="https://pages.nist.gov/800-63-4/sp800-63b.html">NIST SP 800-63B-4, Authentication and Authenticator Management</a><p>Panduan autentikator, password, dan phishing resistance.</p></li>
+<li id="ref-9"><a href="https://forms.office.com/r/YZkRTTzZtw">Microsoft Forms, Practice Test 1</a><p>Sumber empat gambar opsi firewall pada <a href="./#pembahasan-1-q6">Test 1 Q6</a>.</p></li>
+<li id="ref-10"><a href="https://forms.office.com/r/eipAGdYceK">Microsoft Forms, Practice Test 4</a><p>Sumber empat gambar opsi firewall pada <a href="./#pembahasan-4-q52">Test 4 Q52</a>.</p></li>
+<li id="ref-11"><a href="https://www.cisco.com/c/en/us/td/docs/switches/lan/c9000/security/acls/acls-configuration-guide/access-control-lists.pdf">Cisco, Access Control Lists</a><p>Arti permit/deny serta kecocokan sumber dan tujuan pada ACL.</p></li>
+<li id="ref-12"><a href="https://github.com/reezcode/SecPlus-Exercise">Security+ Study Lab</a><p>Basis 452 soal, nomor, lampiran, dan kunci latihan yang dibahas.</p></li>
+    </ol>
+  </section>
+</main>
+<footer class="shell footer"><span>SECURITY+ STUDY LAB / SY0-701</span><a href="./">Kembali ke latihan</a></footer>
+</body>
+</html>

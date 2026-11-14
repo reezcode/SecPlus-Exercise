@@ -54,6 +54,20 @@ function answerText(q, indices) {
 function imagery(q) {
   return (q.media || []).map((name, index) => '<img class="question-image" src="media/' + escape(name) + '" alt="Lampiran soal ' + q.n + ', gambar ' + (index + 1) + '" loading="lazy" draggable="false">').join('');
 }
+function optionContent(q, index) {
+  const image = q.optionMedia?.[index];
+  const label = escape(q.options[index]);
+  return label + (image ? '<img class="option-image" src="media/' + escape(image) +
+    '" alt="Lampiran opsi ' + String.fromCharCode(65 + index) + '" loading="lazy" draggable="false">' : '');
+}
+function answerOptions(q, indices, highlight = false) {
+  return '<ol class="review-options" lang="en">' + indices.map(index =>
+    '<li value="' + (index + 1) + '"' + (highlight && q.answers.includes(index) ? ' class="correct-answer"' : '') +
+    '>' + optionContent(q, index) + '</li>').join('') + '</ol>';
+}
+function explanation(q) {
+  return q.explanation ? '<div class="explanation"><h3>Pembahasan</h3><p>' + escape(q.explanation) + '</p></div>' : '';
+}
 function keyNote(q) {
   return q.answerStatus==='inferred'
     ? '<span class="key-note">Jawaban hasil analisis. Form tidak menampilkan kunci.</span>' : '';
@@ -82,6 +96,8 @@ function renderHome() {
     '<div class="activity-cells"><div><span class="muted small">Kartu dikuasai</span><div class="gauge-line"><meter class="segment-meter" min="0" max="100" value="' + studiedPercent + '" aria-label="Persentase kartu dikuasai"></meter><strong>' + studied + '<small>/' + questions.length + '</small></strong></div></div>' +
     '<div><span class="muted small">Perlu diulang</span><strong class="activity-number amber">' + again + '</strong></div>' +
     '<div><span class="muted small">Sesi terakhir</span><strong class="activity-number">' + escape(progress.history[0]?.score || '—') + '</strong></div></div></div></section>' +
+    '<nav class="panel study-entry" aria-label="Bahan belajar"><div><h2>Materi Security+</h2><p class="muted">Lima domain ujian, glosarium, dan pembahasan setiap soal.</p></div>' +
+    '<div class="actions"><a class="primary" href="materi.html">Buka materi</a><a class="secondary" href="#pembahasan-1">Pembahasan soal</a></div></nav>' +
     (sets.some(s=>s.count < s.expected) ? '<p class="notice">Bank soal ini memuat soal yang berhasil diperiksa. Lihat cakupan tiap practice test di bawah.</p>' : '') +
     '<div class="grid"><section class="panel"><div class="section-head"><div><h2>Konfigurasi latihan</h2><p>Pilih mode, sumber, dan jumlah soal.</p></div><span class="section-num">03 / SESSION</span></div>' +
     '<div class="modes" aria-label="Mode belajar">' + Object.entries(modes).map(([id, mode]) => '<button class="mode" type="button" data-mode="' + id + '" aria-pressed="' + (settings.mode===id) + '"><strong>' + mode[0] + '</strong><span>' + mode[1] + '</span></button>').join('') + '</div>' +
@@ -122,13 +138,13 @@ function renderSession() {
   main.innerHTML = '<section class="session"><div class="session-top">' + action('home','← Beranda') + '<span class="pill">' + modes[mode][0] + '</span></div>' +
     '<div class="meta" role="status">' + (card ? 'KARTU ' : 'SOAL ') + (i+1) + ' / ' + items.length + '</div><progress class="progress" aria-label="Progres sesi" value="' + (i+1) + '" max="' + items.length + '"></progress>' +
     '<article class="panel"><div class="pills"><span class="pill">PRACTICE TEST ' + q.set + ' · Q' + q.n + '</span>' + (!card ? '<span class="pill">' + (picks===1 ? 'PILIH SATU' : 'PILIH ' + picks + ' JAWABAN') + '</span>' : '') + '</div>' +
-    (card ? renderCard(q,revealed,last) : prompt(q) + '<div class="choices" lang="en">' + q.options.map((option, index) => {
+    (card ? renderCard(q,revealed,last) : prompt(q) + '<div class="choices" lang="en">' + q.options.map((_, index) => {
       const wasChosen = chosen.includes(index);
       const styling = graded ? q.answers.includes(index) ? ' correct' : wasChosen ? ' wrong' : '' : '';
       return '<label class="option' + styling + '"><input type="' + (picks===1 ? 'radio' : 'checkbox') + '" name="answer" value="' + index + '"' + (wasChosen?' checked':'') + (graded?' disabled':'') +
-        '><span class="letter" aria-hidden="true">' + String.fromCharCode(65+index) + '</span><span class="label">' + escape(option) + '</span></label>';
+        '><span class="letter" aria-hidden="true">' + String.fromCharCode(65+index) + '</span><span class="label">' + optionContent(q,index) + '</span></label>';
     }).join('') + '</div>' +
-    (graded ? '<p class="status-line' + (isCorrect(q,chosen)?'':' wrong') + '" role="status"><strong>' + (isCorrect(q,chosen)?'Benar.':'Jawaban yang benar') + '</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p>' : '') +
+    (graded ? '<p class="status-line' + (isCorrect(q,chosen)?'':' wrong') + '" role="status"><strong>' + (isCorrect(q,chosen)?'Benar.':'Jawaban yang benar') + '</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p>' + explanation(q) : '') +
     '<div class="actions spread">' + action('back','← Sebelumnya','secondary',i===0) + '<div class="actions" style="margin-top:0">' +
     (mode==='practice' && !graded ? action('skip',last?'Selesaikan':'Lewati') + action('check','Cek jawaban','primary',chosen.length!==picks) :
       action('next',last?'Lihat hasil':'Selanjutnya →','primary')) + '</div></div>' +
@@ -139,16 +155,18 @@ function renderCard(q,revealed,last) {
   const question = (q.stem ? '<span class="question" lang="en">' + escape(q.stem) + '</span>' : '') +
     (q.adapted ? '<span class="muted small">Detail teknis disederhanakan dari soal sumber.</span>' : '');
   const media = imagery(q);
-  const answer = q.answers.map(index => '<span class="flashcard-answer" lang="en">' + escape(q.options[index]) + '</span>').join('') + keyNote(q);
+  const optionMedia = q.optionMedia ? '<span class="flashcard-option-grid" lang="en">' +
+    q.options.map((_, index) => '<span>' + optionContent(q, index) + '</span>').join('') + '</span>' : '';
+  const answer = q.answers.map(index => '<span class="flashcard-answer" lang="en">' + optionContent(q, index) + '</span>').join('') + keyNote(q);
   return '<button type="button" class="flashcard" data-action="flip" data-side="' + (revealed?'answer':'question') + '" aria-describedby="card-gesture">' +
-    '<span class="flashcard-faces"><span class="flashcard-face" aria-hidden="' + revealed + '"><span class="eyebrow">01 / SOAL</span>' + question + '</span>' +
+    '<span class="flashcard-faces"><span class="flashcard-face" aria-hidden="' + revealed + '"><span class="eyebrow">01 / SOAL</span>' + question + optionMedia + '</span>' +
     '<span class="flashcard-face" aria-hidden="' + !revealed + '"><span class="eyebrow">02 / KUNCI JAWABAN</span>' + answer + '</span>' +
     (media ? '<span class="flashcard-media">' + media + '</span>' : '') + '</span>' +
     '<span class="flashcard-hint"><span aria-hidden="true">↻</span> ' + (revealed?'Balik ke soal':'Balik untuk lihat jawaban') + '</span></button>' +
     '<p class="flashcard-gesture" id="card-gesture">Geser kiri atau kanan untuk pindah kartu.</p>' +
     '<div class="actions spread">' + action('back','← Sebelumnya','secondary',session.i===0) +
     action('next',last?'Selesai':'Berikutnya →','primary') + '</div>' +
-    (revealed ? '<div class="actions flashcard-rating"><span class="muted small">Tandai kartu (opsional)</span>' +
+    (revealed ? explanation(q) + '<div class="actions flashcard-rating"><span class="muted small">Tandai kartu (opsional)</span>' +
       action('again','Perlu diulang','mini') + action('known','Sudah paham','mini') + '</div>' : '');
 }
 
@@ -183,18 +201,55 @@ function renderResults() {
         isCorrect(q,selected[q.id])?'Benar':selected[q.id]?.length?'Salah':'Kosong') + ' · <span lang="en">' +
       escape(q.stem?.split('\n')[0].slice(0,100)||'Soal bergambar') + '</span></summary>' + prompt(q) +
       (card ? '' : '<p>Jawabanmu <span lang="en">' + escape(answerText(q,selected[q.id])) + '</span></p>') +
-      '<p><strong>Kunci jawaban</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p></details>').join('') + '</div></article></section>';
+      '<p><strong>Kunci jawaban</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p>' + answerOptions(q, q.options.map((_, index) => index), true) + explanation(q) + '</details>').join('') + '</div></article></section>';
+}
+
+function readReviewRoute() {
+  const match = location.hash.match(/^#pembahasan-([1-5])(?:-q([1-9][0-9]*))?$/);
+  if (!match) return null;
+  return { set: Number(match[1]), question: Number(match[2]) };
+}
+
+function renderReview({set, question}) {
+  const items = questions.filter(q => q.set === set);
+  main.innerHTML = '<section class="session study-review"><div class="session-top">' + action('home','← Beranda') +
+    '<a class="secondary" href="materi.html">Materi</a></div><h1>Pembahasan latihan</h1>' +
+    '<nav class="study-sets" aria-label="Pilih practice test">' + sets.map(entry =>
+      '<a class="' + (entry.set === set ? 'primary' : 'secondary') + '" href="#pembahasan-' + entry.set + '"' +
+      (entry.set === set ? ' aria-current="true"' : '') + '>Test ' + entry.set + '</a>').join('') + '</nav>' +
+    '<article class="panel review"><h2>Practice Test ' + set + ' · ' + items.length + ' soal</h2>' +
+    items.map(q => '<details id="review-q' + q.n + '"' + (q.n === question ? ' open' : '') + '><summary>' +
+      '<span class="meta">Q' + q.n + '</span> <span lang="en">' + escape(q.topic) + '</span></summary>' + prompt(q) +
+      (q.answers.length > 1 ? '<p class="muted">Pilih ' + q.answers.length + ' jawaban.</p>' : '') +
+      answerOptions(q, q.options.map((_, index) => index)) +
+      '<div class="review-key"><h3>Kunci jawaban</h3>' + answerOptions(q,q.answers,true) + keyNote(q) + '</div>' +
+      explanation(q) + '<a class="question-link" href="#pembahasan-' + set + '-q' + q.n + '">Tautan soal Q' + q.n + '</a></details>').join('') +
+    '</article></section>';
+}
+
+function applyRoute() {
+  if (!questions.length) return;
+  const route = readReviewRoute();
+  if (!route && screen !== 'review') return;
+  screen = route ? 'review' : 'home';
+  render(true);
+  const entry = route && main.querySelector('#review-q' + route.question);
+  if (entry) {
+    entry.querySelector('summary').focus({preventScroll:true});
+    entry.scrollIntoView({block:'start'});
+  }
 }
 
 function render(focus=false) {
-  document.querySelector('#console-location').textContent = screen==='home' ? 'DASHBOARD' : modes[session.mode][0].toUpperCase();
+  document.querySelector('#console-location').textContent = screen==='home' ? 'DASHBOARD' : screen==='review' ? 'PEMBAHASAN' : modes[session.mode][0].toUpperCase();
   document.querySelector('[data-console-home]').setAttribute('aria-pressed', String(screen==='home'));
   document.querySelectorAll('[data-console-mode]').forEach(button => {
-    button.setAttribute('aria-pressed', String(screen!=='home' && button.dataset.consoleMode===session.mode));
+    button.setAttribute('aria-pressed', String(Boolean(session && (screen==='session' || screen==='results') && button.dataset.consoleMode===session.mode)));
   });
   if (screen==='home') renderHome();
   if (screen==='session') renderSession();
   if (screen==='results') renderResults();
+  if (screen==='review') renderReview(readReviewRoute());
   if (focus) {
     main.focus({preventScroll:true});
     window.scrollTo(0,0);
@@ -212,6 +267,7 @@ function moveQuestion(step) {
   render(true);
 }
 function goHome() {
+  if (readReviewRoute()) history.replaceState(null, '', location.pathname + location.search);
   screen = 'home';
   render(true);
 }
@@ -222,14 +278,14 @@ function updateCount() {
 }
 
 document.querySelectorAll('.brand,.console-title').forEach(link => {
-  link.addEventListener('click',event=>{event.preventDefault();goHome();});
+  link.addEventListener('click',event=>{event.preventDefault();if (questions.length) goHome();});
 });
 document.querySelector('.rail').addEventListener('click',event=>{
   const button=event.target.closest('button');
-  if (!button) return;
+  if (!button || !questions.length) return;
   if (button.dataset.consoleMode) settings.mode=button.dataset.consoleMode;
   goHome();
-  main.querySelector('[data-mode="' + settings.mode + '"]').focus({preventScroll:true});
+  if (button.dataset.consoleMode) main.querySelector('[data-mode="' + settings.mode + '"]').focus({preventScroll:true});
 });
 main.addEventListener('change',event=>{
   const input = event.target;
@@ -301,13 +357,16 @@ main.addEventListener('click',event=>{
   if (act==='retry') start(session.items.filter(item => session.mode==='cards' ? session.visited[item.id]==='again' : !isCorrect(item,session.selected[item.id])),session.mode);
 });
 
-fetch('bank.json').then(response=>{
+window.addEventListener('hashchange', applyRoute);
+
+fetch('bank.json?v=3').then(response=>{
   if (!response.ok) throw new Error('Bank soal belum tersedia.');
   return response.json();
 }).then(data=>{
   sets=data.sets;
   questions=data.questions;
-  render();
+  if (readReviewRoute()) applyRoute();
+  else render();
 }).catch(()=>{
   main.innerHTML='<p class="notice" role="alert">Bank soal gagal dimuat. Muat ulang halaman untuk mencoba lagi.</p>';
 });
