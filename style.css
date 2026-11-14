@@ -161,7 +161,8 @@ td a span { color: #888; font-size: 10px; }
 .flashcard-face { grid-area: 1/1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 .flashcard-face[aria-hidden=true] { visibility: hidden; }
 .flashcard-face .question { margin: 0 0 6px; }
-.flashcard-face .question-image { align-self: flex-start; max-height: 490px; }
+.flashcard-media { grid-column: 1; min-width: 0; }
+.flashcard-media .question-image { max-height: 490px; margin-bottom: 0; }
 .flashcard-answer { display: block; font-size: clamp(18px,2.5vw,25px); font-weight: 400; white-space: pre-wrap; overflow-wrap: anywhere; }
 .flashcard-answer + .flashcard-answer { margin-top: 12px; }
 .flashcard-hint { padding-top: 12px; border-top: 1px solid #353535; color: var(--sub); font-size: 11px; }

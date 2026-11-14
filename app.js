@@ -136,12 +136,14 @@ function renderSession() {
     '</article></section>';
 }
 function renderCard(q,revealed,last) {
-  const question = (q.stem ? '<span class="question" lang="en">' + escape(q.stem) + '</span>' : '') + imagery(q) +
+  const question = (q.stem ? '<span class="question" lang="en">' + escape(q.stem) + '</span>' : '') +
     (q.adapted ? '<span class="muted small">Detail teknis disederhanakan dari soal sumber.</span>' : '');
+  const media = imagery(q);
   const answer = q.answers.map(index => '<span class="flashcard-answer" lang="en">' + escape(q.options[index]) + '</span>').join('') + keyNote(q);
   return '<button type="button" class="flashcard" data-action="flip" data-side="' + (revealed?'answer':'question') + '" aria-describedby="card-gesture">' +
     '<span class="flashcard-faces"><span class="flashcard-face" aria-hidden="' + revealed + '"><span class="eyebrow">01 / SOAL</span>' + question + '</span>' +
-    '<span class="flashcard-face" aria-hidden="' + !revealed + '"><span class="eyebrow">02 / KUNCI JAWABAN</span>' + answer + '</span></span>' +
+    '<span class="flashcard-face" aria-hidden="' + !revealed + '"><span class="eyebrow">02 / KUNCI JAWABAN</span>' + answer + '</span>' +
+    (media ? '<span class="flashcard-media">' + media + '</span>' : '') + '</span>' +
     '<span class="flashcard-hint"><span aria-hidden="true">↻</span> ' + (revealed?'Balik ke soal':'Balik untuk lihat jawaban') + '</span></button>' +
     '<p class="flashcard-gesture" id="card-gesture">Geser kiri atau kanan untuk pindah kartu.</p>' +
     '<div class="actions spread">' + action('back','← Sebelumnya','secondary',session.i===0) +
