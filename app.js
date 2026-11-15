@@ -54,16 +54,18 @@ function answerText(q, indices) {
 function imagery(q) {
   return (q.media || []).map((name, index) => '<img class="question-image" src="media/' + escape(name) + '" alt="Lampiran soal ' + q.n + ', gambar ' + (index + 1) + '" loading="lazy" draggable="false">').join('');
 }
-function optionContent(q, index) {
+function optionContent(q, index, loading = 'eager') {
   const image = q.optionMedia?.[index];
   const label = escape(q.options[index]);
-  return label + (image ? '<img class="option-image" src="media/' + escape(image) +
-    '" alt="Lampiran opsi ' + String.fromCharCode(65 + index) + '" loading="lazy" draggable="false">' : '');
+  if (!image) return label;
+  const alt = q.optionAlt?.[index] ?? ('Lampiran opsi ' + String.fromCharCode(65 + index));
+  return label + '<img class="option-image" src="media/' + escape(image) + '" alt="' + escape(alt) +
+    '" loading="' + loading + '" draggable="false">';
 }
-function answerOptions(q, indices, highlight = false) {
+function answerOptions(q, indices, highlight = false, loading = 'lazy') {
   return '<ol class="review-options" lang="en">' + indices.map(index =>
     '<li value="' + (index + 1) + '"' + (highlight && q.answers.includes(index) ? ' class="correct-answer"' : '') +
-    '>' + optionContent(q, index) + '</li>').join('') + '</ol>';
+    '>' + optionContent(q, index, loading) + '</li>').join('') + '</ol>';
 }
 function explanation(q) {
   return q.explanation ? '<div class="explanation"><h3>Pembahasan</h3><p>' + escape(q.explanation) + '</p></div>' : '';
@@ -114,14 +116,16 @@ function renderHome() {
 
 function start(items = shuffle(sourcePool()).slice(0, settings.count), mode=settings.mode) {
   if (!items.length) return;
-  session = { items, mode, i:0, selected:{}, checked:{}, revealed:false, visited:{} };
+  const optionOrder = Object.fromEntries(items.map(q => [q.id, shuffle(q.options.map((_, index) => index))]));
+  session = { items, optionOrder, mode, i:0, selected:{}, checked:{}, revealed:false, visited:{} };
   screen = 'session';
   render(true);
 }
 function renderSession() {
-  const {items,i,mode,selected,checked,revealed} = session;
+  const {items,optionOrder,i,mode,selected,checked,revealed} = session;
   const q = items[i];
   const chosen = selected[q.id] || [];
+  const order = optionOrder[q.id];
   const last = i === items.length-1;
   const card = mode === 'cards';
   const graded = !!checked[q.id];
@@ -129,11 +133,12 @@ function renderSession() {
   main.innerHTML = '<section class="session"><div class="session-top">' + action('home','← Beranda') + '<span class="pill">' + modes[mode][0] + '</span></div>' +
     '<div class="meta" role="status">' + (card ? 'KARTU ' : 'SOAL ') + (i+1) + ' / ' + items.length + '</div><progress class="progress" aria-label="Progres sesi" value="' + (i+1) + '" max="' + items.length + '"></progress>' +
     '<article class="panel"><div class="pills"><span class="pill">PRACTICE TEST ' + q.set + ' · Q' + q.n + '</span>' + (!card ? '<span class="pill">' + (picks===1 ? 'PILIH SATU' : 'PILIH ' + picks + ' JAWABAN') + '</span>' : '') + '</div>' +
-    (card ? renderCard(q,revealed,last) : prompt(q) + '<div class="choices" lang="en">' + q.options.map((_, index) => {
+    (card ? renderCard(q, order, revealed, last) : prompt(q) + '<div class="choices" lang="en">' + order.map((index, position) => {
       const wasChosen = chosen.includes(index);
       const styling = graded ? q.answers.includes(index) ? ' correct' : wasChosen ? ' wrong' : '' : '';
       return '<label class="option' + styling + '"><input type="' + (picks===1 ? 'radio' : 'checkbox') + '" name="answer" value="' + index + '"' + (wasChosen?' checked':'') + (graded?' disabled':'') +
-        '><span class="letter" aria-hidden="true">' + String.fromCharCode(65+index) + '</span><span class="label">' + optionContent(q,index) + '</span></label>';
+        '>' + (q.optionMedia ? '' : '<span class="letter" aria-hidden="true">' + String.fromCharCode(65+position) + '</span>') +
+        '<span class="label">' + optionContent(q,index) + '</span></label>';
     }).join('') + '</div>' +
     (graded ? '<p class="status-line' + (isCorrect(q,chosen)?'':' wrong') + '" role="status"><strong>' + (isCorrect(q,chosen)?'Benar.':'Jawaban yang benar') + '</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p>' + explanation(q) : '') +
     '<div class="actions spread">' + action('back','← Sebelumnya','secondary',i===0) + '<div class="actions" style="margin-top:0">' +
@@ -142,12 +147,12 @@ function renderSession() {
     (mode==='exam' ? '<p class="muted small" style="margin:9px 0 0">' + Object.values(selected).filter(a=>a.length).length + ' / ' + items.length + ' soal sudah diisi. Kamu bisa kembali sebelum melihat hasil.</p>' : '')) +
     '</article></section>';
 }
-function renderCard(q,revealed,last) {
+function renderCard(q, order, revealed, last) {
   const question = (q.stem ? '<span class="question" lang="en">' + escape(q.stem) + '</span>' : '') +
     (q.adapted ? '<span class="muted small">Detail teknis disederhanakan dari soal sumber.</span>' : '');
   const media = imagery(q);
   const optionMedia = q.optionMedia ? '<span class="flashcard-option-grid" lang="en">' +
-    q.options.map((_, index) => '<span>' + optionContent(q, index) + '</span>').join('') + '</span>' : '';
+    order.map(index => '<span>' + optionContent(q, index) + '</span>').join('') + '</span>' : '';
   const answer = q.answers.map(index => '<span class="flashcard-answer" lang="en">' + optionContent(q, index) + '</span>').join('') + keyNote(q);
   return '<button type="button" class="flashcard" data-action="flip" data-side="' + (revealed?'answer':'question') + '" aria-describedby="card-gesture">' +
     '<span class="flashcard-faces"><span class="flashcard-face" aria-hidden="' + revealed + '"><span class="eyebrow">01 / SOAL</span>' + question + optionMedia + '</span>' +
@@ -212,7 +217,7 @@ function renderReview({set, question}) {
     items.map(q => '<details id="review-q' + q.n + '"' + (q.n === question ? ' open' : '') + '><summary>' +
       '<span class="meta">Q' + q.n + '</span> <span lang="en">' + escape(q.topic) + '</span></summary>' + prompt(q) +
       (q.answers.length > 1 ? '<p class="muted">Pilih ' + q.answers.length + ' jawaban.</p>' : '') +
-      answerOptions(q, q.options.map((_, index) => index)) +
+      answerOptions(q, q.options.map((_, index) => index), false, q.n === question ? 'eager' : 'lazy') +
       '<div class="review-key"><h3>Kunci jawaban</h3>' + answerOptions(q,q.answers,true) + keyNote(q) + '</div>' +
       explanation(q) + '<a class="question-link" href="#pembahasan-' + set + '-q' + q.n + '">Tautan soal Q' + q.n + '</a></details>').join('') +
     '</article></section>';
@@ -350,7 +355,7 @@ main.addEventListener('click',event=>{
 
 window.addEventListener('hashchange', applyRoute);
 
-fetch('bank.json?v=3').then(response=>{
+fetch('bank.json?v=5').then(response=>{
   if (!response.ok) throw new Error('Bank soal belum tersedia.');
   return response.json();
 }).then(data=>{
