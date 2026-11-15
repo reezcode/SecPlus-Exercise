@@ -87,38 +87,29 @@ function renderHome() {
   settings.count = Math.min(total || 1, Math.max(1, settings.count || 1));
   const select = (value,label) => '<option value="' + value + '"' + (settings.source === value ? ' selected' : '') + '>' + label + '</option>';
   const studiedPercent = questions.length ? Math.round(100*studied/questions.length) : 0;
-  main.innerHTML = '<section class="metrics" aria-label="Ringkasan belajar"><div class="panel metric-panel">' +
-    '<div class="section-head"><h2>Bank overview</h2><span class="section-num">01 / DATA</span></div><div class="metric-cells">' +
-    '<div class="metric-cell"><strong>' + questions.length + '</strong><span>SOAL TERSEDIA</span></div>' +
-    '<div class="metric-cell"><strong>' + sets.filter(s=>s.count).length + '</strong><span>PRACTICE TEST</span></div>' +
-    '<div class="metric-cell"><strong>' + progress.history.length + '</strong><span>RIWAYAT SESI</span></div></div></div>' +
-    '<div class="panel metric-panel"><div class="section-head"><h2>Study activity</h2><span class="section-num">02 / PROGRESS</span></div>' +
-    '<div class="activity-cells"><div><span class="muted small">Kartu dikuasai</span><div class="gauge-line"><meter class="segment-meter" min="0" max="100" value="' + studiedPercent + '" aria-label="Persentase kartu dikuasai"></meter><strong>' + studied + '<small>/' + questions.length + '</small></strong></div></div>' +
-    '<div><span class="muted small">Perlu diulang</span><strong class="activity-number amber">' + again + '</strong></div>' +
-    '<div><span class="muted small">Sesi terakhir</span><strong class="activity-number">' + escape(progress.history[0]?.score || '—') + '</strong></div></div></div></section>' +
-    '<nav class="panel study-entry" aria-label="Bahan belajar"><div><h2>Materi Security+</h2><p class="muted">Lima domain ujian, glosarium, dan pembahasan setiap soal.</p></div>' +
+  main.innerHTML = '<div class="page-heading"><h1>Security+ Study Lab <span class="course-code">SY0-701</span></h1></div>' +
+    '<nav class="panel study-entry" aria-label="Bahan belajar"><div><h2>Materi dan pembahasan</h2><p class="muted">Lima domain ujian, glosarium, dan pembahasan setiap soal.</p></div>' +
     '<div class="actions"><a class="primary" href="materi.html">Buka materi</a><a class="secondary" href="#pembahasan-1">Pembahasan soal</a></div></nav>' +
     (sets.some(s=>s.count < s.expected) ? '<p class="notice">Bank soal ini memuat soal yang berhasil diperiksa. Lihat cakupan tiap practice test di bawah.</p>' : '') +
-    '<div class="grid"><section class="panel"><div class="section-head"><div><h2>Konfigurasi latihan</h2><p>Pilih mode, sumber, dan jumlah soal.</p></div><span class="section-num">03 / SESSION</span></div>' +
+    '<div class="grid"><section class="panel"><div class="section-head"><h2>Mulai latihan</h2></div>' +
     '<div class="modes" aria-label="Mode belajar">' + Object.entries(modes).map(([id, mode]) => '<button class="mode" type="button" data-mode="' + id + '" aria-pressed="' + (settings.mode===id) + '"><strong>' + mode[0] + '</strong><span>' + mode[1] + '</span></button>').join('') + '</div>' +
     '<div class="fields"><label class="field"><span>Sumber soal</span><select id="source">' + select('all', 'Campur semua set') +
     sets.map(s => select(String(s.set),'Practice Test ' + s.set + ' (' + s.count + ')')).join('') + select('again','Perlu diulang (' + again + ')') +
     '</select></label><label class="field"><span>Jumlah soal</span><input id="count" type="number" min="1" max="' + total + '" value="' + (total ? settings.count : '') + '"' + (!total ? ' disabled' : '') + '></label></div>' +
     '<div class="count-list" aria-label="Pilihan jumlah soal">' + [10,25,50].filter(n => n < total).map(n => '<button class="mini" type="button" data-count="' + n + '">' + n + '</button>').join('') + (total ? '<button class="mini" type="button" data-count="' + total + '">Semua (' + total + ')</button>' : '') + '</div>' +
     '<div class="actions">' + action('start','Mulai sesi →','primary',!total) + '<span class="muted small">' + total + ' soal tersedia dari sumber ini</span></div></section>' +
-    '<aside class="panel"><div class="section-head"><div><h2>Question bank</h2><p>Sumber dan cakupan.</p></div><span class="section-num">04 / SOURCES</span></div>' +
-    '<div class="bank-table"><table><caption class="sr-only">Sumber dan jumlah soal tiap practice test</caption><thead><tr><th>SUMBER</th><th>SOAL</th><th>STATUS</th></tr></thead><tbody>' +
-    sets.map(s => '<tr><td><a href="https://forms.office.com/r/' + sourceLinks[s.set-1] + '" target="_blank" rel="noopener noreferrer">Practice Test ' + s.set + ' <span aria-hidden="true">↗</span></a></td><td>' + s.count + '</td><td><span class="source-status">' + (s.count < s.expected ? 'PARTIAL' : 'LOADED') + '</span></td></tr>').join('') + '</tbody></table></div>' +
-    (questions.some(q=>q.answerStatus==='inferred') ? '<p class="muted small" style="margin:10px 0 0">' +
-      questions.filter(q=>q.answerStatus==='inferred').length + ' jawaban hasil analisis diberi label di tiap soal.</p>' : '') +
-    '<h3 style="margin-top:17px">Progres lokal</h3><p class="muted small">' + studied + ' kartu dikuasai · ' + again + ' perlu diulang</p>' +
+    '<aside class="dashboard-sidebar"><section class="panel"><div class="section-head"><h2>Progres belajar</h2></div>' +
+    '<dl class="activity-cells"><div><dt>Kartu dikuasai</dt><dd>' + studied + ' <span class="muted">/ ' + questions.length + '</span></dd></div>' +
+    '<div><dt>Perlu diulang</dt><dd>' + again + '</dd></div><div><dt>Sesi terakhir</dt><dd>' + escape(progress.history[0]?.score || '—') + '</dd></div></dl>' +
+    '<meter class="segment-meter" min="0" max="100" value="' + studiedPercent + '" aria-label="Persentase kartu dikuasai"></meter>' +
     (progress.history.length ? '<ul class="history-list" aria-label="Riwayat sesi">' + progress.history.slice(0,3).map(h => '<li><span>' + escape(modes[h.mode]?.[0]) + ' · ' + escape(h.score) + '</span><time>' + escape(new Date(h.date).toLocaleDateString('id-ID',{timeZone:'Asia/Jakarta'})) + '</time></li>').join('') + '</ul>' : '') +
-    '</aside></div>' +
-    '<section class="panel console-help"><div class="section-head"><h2>Study console</h2><span class="section-num">05 / QUICK GUIDE</span></div>' +
-    '<div class="console-lines"><p><span>&gt; LATIHAN</span> Pilih jawaban, lalu cek kunci tiap soal.</p>' +
-    '<p><span>&gt; SIMULASI</span> Kerjakan satu sesi dan lihat skor di akhir.</p>' +
-    '<p><span>&gt; FLASHCARD</span> Klik untuk balik kartu. Geser kiri/kanan atau gunakan tombol navigasi.</p></div>' +
-    '<div class="console-prompt" aria-hidden="true"><span>study@security-plus</span> ~ $ <i></i></div></section>';
+    '</section><section class="panel"><div class="section-head"><h2>Bank soal</h2></div><ul class="source-list">' +
+    sets.map(s => '<li><a href="https://forms.office.com/r/' + sourceLinks[s.set-1] + '" target="_blank" rel="noopener noreferrer">Practice Test ' + s.set + ' <span aria-hidden="true">↗</span></a>' +
+      '<span class="muted">' + s.count + (s.count < s.expected ? ' / ' + s.expected : '') + ' soal</span></li>').join('') +
+    '</ul>' +
+    (questions.some(q=>q.answerStatus==='inferred') ? '<p class="muted small source-note">' +
+      questions.filter(q=>q.answerStatus==='inferred').length + ' jawaban hasil analisis diberi label di tiap soal.</p>' : '') +
+    '</section></aside></div>';
 }
 
 function start(items = shuffle(sourcePool()).slice(0, settings.count), mode=settings.mode) {
@@ -241,7 +232,7 @@ function applyRoute() {
 }
 
 function render(focus=false) {
-  document.querySelector('#console-location').textContent = screen==='home' ? 'DASHBOARD' : screen==='review' ? 'PEMBAHASAN' : modes[session.mode][0].toUpperCase();
+  document.querySelector('#console-location').textContent = screen==='home' ? 'Beranda' : screen==='review' ? 'Pembahasan latihan' : modes[session.mode][0];
   document.querySelector('[data-console-home]').setAttribute('aria-pressed', String(screen==='home'));
   document.querySelectorAll('[data-console-mode]').forEach(button => {
     button.setAttribute('aria-pressed', String(Boolean(session && (screen==='session' || screen==='results') && button.dataset.consoleMode===session.mode)));
@@ -277,7 +268,7 @@ function updateCount() {
   settings.count = Math.max(1,Math.min(sourcePool().length || 1,settings.count));
 }
 
-document.querySelectorAll('.brand,.console-title').forEach(link => {
+document.querySelectorAll('.brand').forEach(link => {
   link.addEventListener('click',event=>{event.preventDefault();if (questions.length) goHome();});
 });
 document.querySelector('.rail').addEventListener('click',event=>{
