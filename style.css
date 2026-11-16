@@ -371,3 +371,71 @@ main.shell { padding-block: clamp(1.5rem, 4vw, 3rem); min-height: 68vh; }
   .activity-cells { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .activity-cells > div:first-child { grid-column: 1 / -1; }
 }
+
+.timed-exam-start {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.timed-exam-start p { margin-top: .25rem; }
+.timed-exam-start .actions, .exam-custom-title { margin-top: .75rem; }
+.exam-custom-title { margin-bottom: .75rem; }
+
+.exam-toolbar {
+  position: sticky;
+  top: .5rem;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1rem;
+  margin-bottom: 1rem;
+  padding: .5rem .75rem;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.exam-clock {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 650;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.exam-clock-low, [data-action="exam-flag"][aria-pressed="true"] { color: var(--amber); }
+[data-action="exam-flag"][aria-pressed="true"] { border-color: var(--amber); }
+
+.exam-dialog {
+  width: min(36rem, calc(100% - 2rem));
+  max-height: 85dvh;
+  padding: var(--panel-pad);
+  overflow: auto;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+}
+.exam-dialog::backdrop { background: #070b13cc; }
+.exam-dialog p { margin-top: .5rem; }
+.exam-question-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.25rem, 1fr));
+  gap: .5rem;
+  max-height: 48dvh;
+  margin-top: 1rem;
+  padding: .15rem;
+  overflow: auto;
+}
+.exam-question {
+  gap: .2rem;
+  padding-inline: .25rem;
+  background: var(--bg);
+  font-variant-numeric: tabular-nums;
+}
+.exam-question-answered { background: #1b302d; border-color: var(--green); }
+.exam-question[aria-current="step"] { outline: 2px solid var(--focus); outline-offset: -2px; }
+.exam-question span { color: var(--amber); }
+.exam-result-note { margin-top: .75rem; color: var(--sub); }

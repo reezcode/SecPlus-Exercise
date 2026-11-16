@@ -4,10 +4,13 @@ const main = document.querySelector('main');
 const sourceLinks = ['YZkRTTzZtw','UrkNWmbQ5U','mvgNYAWnPp','eipAGdYceK','2YJkHSfgL6'];
 const modes = {
   practice: ['Latihan', 'Cek kunci setelah tiap soal'],
-  exam: ['Simulasi', 'Lihat skor di akhir sesi'],
+  exam: ['Simulasi', 'Ujian 90 menit atau latihan tanpa timer'],
   cards: ['Flashcard', 'Klik untuk balik, geser untuk pindah']
 };
 const storageKey = 'security-plus-study-lab-v1';
+const timedExamKey = 'security-plus-timed-exam-v1';
+const examLength = 90;
+const examDuration = 90 * 60 * 1000;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 function readProgress() {
@@ -31,6 +34,7 @@ let screen = 'home';
 let reviewOnlyMissed = false;
 let cardGesture;
 let suppressCardClick = false;
+let examInterval;
 
 function sourcePool() {
   if (settings.source === 'all') return questions;
@@ -48,6 +52,121 @@ function shuffle(items) {
 function isCorrect(q, selected) {
   return selected?.length === q.answers.length && q.answers.every(index => selected.includes(index));
 }
+function formatExamTime(milliseconds) {
+  const seconds = Math.ceil(milliseconds / 1000);
+  return [Math.floor(seconds / 60), seconds % 60].map(value => String(value).padStart(2, '0')).join(':');
+}
+
+function saveTimedExam() {
+  if (!session?.timed) return;
+  const {items, optionOrder, i, selected, timed} = session;
+  try {
+    sessionStorage.setItem(timedExamKey, JSON.stringify({ids:items.map(q => q.id), optionOrder, i, selected, timed}));
+  } catch {}
+}
+
+function clearTimedExam() {
+  clearInterval(examInterval);
+  try { sessionStorage.removeItem(timedExamKey); } catch {}
+}
+
+function restoreTimedExam() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(timedExamKey));
+    if (!saved) return false;
+    const bank = new Map(questions.map(q => [q.id, q]));
+    const items = saved.ids.map(id => bank.get(id));
+    if (!saved.selected || !saved.timed?.flagged || items.length !== examLength || items.some(q => !q) || new Set(saved.ids).size !== examLength ||
+        !Number.isFinite(saved.timed.deadline) || !Number.isInteger(saved.i) || !items[saved.i] ||
+        items.some(q => {
+          const order = saved.optionOrder[q.id];
+          return order?.length !== q.options.length || new Set(order).size !== q.options.length ||
+            order.some(index => !Number.isInteger(index) || index < 0 || index >= q.options.length);
+        })) {
+      clearTimedExam();
+      return false;
+    }
+    const {optionOrder, i, selected, timed} = saved;
+    session = {items, optionOrder, i, selected, timed, mode:'exam', checked:{}, visited:{}};
+    settings.mode = 'exam';
+    if (readReviewRoute()) history.replaceState(null, '', location.pathname + location.search);
+    screen = 'session';
+    render();
+    beginExamClock();
+    return true;
+  } catch {
+    clearTimedExam();
+    return false;
+  }
+}
+
+function updateExamClock() {
+  if (screen !== 'session' || !session?.timed) return false;
+  const remaining = session.timed.deadline - Date.now();
+  if (remaining <= 0) {
+    finish('expired');
+    return true;
+  }
+  const timer = main.querySelector('#exam-clock');
+  if (timer) {
+    const time = formatExamTime(remaining);
+    if (timer.textContent !== time) timer.textContent = time;
+    timer.classList.toggle('exam-clock-low', remaining <= 5 * 60 * 1000);
+  }
+  return false;
+}
+
+function beginExamClock() {
+  clearInterval(examInterval);
+  if (!updateExamClock()) examInterval = setInterval(updateExamClock, 250);
+}
+
+function startTimedExam() {
+  if (questions.length < examLength) return;
+  settings.mode = 'exam';
+  start(shuffle(questions).slice(0, examLength), 'exam', {deadline:Date.now() + examDuration, flagged:{}});
+}
+
+function examCounts() {
+  const {items, selected, timed} = session;
+  return {
+    incomplete: items.filter(q => selected[q.id]?.length !== q.answers.length).length,
+    flagged: Object.values(timed.flagged).filter(Boolean).length
+  };
+}
+
+function updateExamProgress() {
+  const progressStatus = main.querySelector('#exam-progress-status');
+  if (progressStatus) {
+    const {incomplete, flagged} = examCounts();
+    progressStatus.textContent = (session.items.length - incomplete) + ' / ' + session.items.length +
+      ' terjawab · ' + flagged + ' ditandai';
+  }
+}
+
+function showExamDialog(confirmSubmission = false) {
+  const dialog = main.querySelector('#exam-dialog');
+  const {items, i, selected, timed} = session;
+  const {incomplete, flagged} = examCounts();
+  dialog.innerHTML = '<h2 id="exam-dialog-title">' + (confirmSubmission ? 'Kirim jawaban?' : 'Daftar soal') + '</h2>' +
+    '<p class="muted">' + incomplete + ' belum lengkap · ' + flagged + ' ditandai</p>' +
+    (confirmSubmission
+      ? '<p>Setelah dikirim, hasil dan pembahasan akan langsung tampil.</p>'
+      : '<div class="exam-question-grid">' + items.map((q, index) => {
+        const answered = selected[q.id]?.length === q.answers.length;
+        const flagged = !!timed.flagged[q.id];
+        const label = 'Soal ' + (index + 1) + (answered ? ', terjawab' : ', belum lengkap') + (flagged ? ', ditandai' : '');
+        return '<button class="mini exam-question' + (answered ? ' exam-question-answered' : '') + '"' +
+          ' type="button" data-exam-jump="' + index + '" aria-label="' + label + '"' + (i === index ? ' aria-current="step"' : '') +
+          '>' + (index + 1) + (flagged ? '<span aria-hidden="true">⚑</span>' : '') + '</button>';
+      }).join('') + '</div>') +
+    '<div class="actions">' + action('exam-close','Lanjut ujian') +
+    (confirmSubmission ? action('exam-submit','Kirim sekarang','primary') : action('exam-confirm','Akhiri ujian','primary')) + '</div>';
+  if (!dialog.open) dialog.showModal();
+  const focusTarget = confirmSubmission ? '[data-action="exam-close"]' : '[aria-current="step"]';
+  dialog.querySelector(focusTarget).focus();
+}
+
 function answerText(q, indices) {
   return indices?.length ? indices.map(index => q.options[index]).join(' · ') : 'Tidak dijawab';
 }
@@ -95,11 +214,15 @@ function renderHome() {
     (sets.some(s=>s.count < s.expected) ? '<p class="notice">Bank soal ini memuat soal yang berhasil diperiksa. Lihat cakupan tiap practice test di bawah.</p>' : '') +
     '<div class="grid"><section class="panel"><div class="section-head"><h2>Mulai latihan</h2></div>' +
     '<div class="modes" aria-label="Mode belajar">' + Object.entries(modes).map(([id, mode]) => '<button class="mode" type="button" data-mode="' + id + '" aria-pressed="' + (settings.mode===id) + '"><strong>' + mode[0] + '</strong><span>' + mode[1] + '</span></button>').join('') + '</div>' +
+    (settings.mode === 'exam' ? '<section class="timed-exam-start"><h3>Simulasi penuh SY0-701</h3>' +
+      '<p class="muted">90 soal acak dari semua practice test · 90 menit</p><div class="actions">' +
+      action('start-timed','Mulai simulasi penuh','primary',questions.length < examLength) + '</div></section>' +
+      '<h3 class="exam-custom-title">Simulasi tanpa timer</h3>' : '') +
     '<div class="fields"><label class="field"><span>Sumber soal</span><select id="source">' + select('all', 'Campur semua set') +
     sets.map(s => select(String(s.set),'Practice Test ' + s.set + ' (' + s.count + ')')).join('') + select('again','Perlu diulang (' + again + ')') +
     '</select></label><label class="field"><span>Jumlah soal</span><input id="count" type="number" min="1" max="' + total + '" value="' + (total ? settings.count : '') + '"' + (!total ? ' disabled' : '') + '></label></div>' +
     '<div class="count-list" aria-label="Pilihan jumlah soal">' + [10,25,50].filter(n => n < total).map(n => '<button class="mini" type="button" data-count="' + n + '">' + n + '</button>').join('') + (total ? '<button class="mini" type="button" data-count="' + total + '">Semua (' + total + ')</button>' : '') + '</div>' +
-    '<div class="actions">' + action('start','Mulai sesi →','primary',!total) + '<span class="muted small">' + total + ' soal tersedia dari sumber ini</span></div></section>' +
+    '<div class="actions">' + action('start',settings.mode === 'exam' ? 'Mulai tanpa timer' : 'Mulai sesi →',settings.mode === 'exam' ? 'secondary' : 'primary',!total) + '<span class="muted small">' + total + ' soal tersedia dari sumber ini</span></div></section>' +
     '<aside class="dashboard-sidebar"><section class="panel"><div class="section-head"><h2>Progres belajar</h2></div>' +
     '<dl class="activity-cells"><div><dt>Kartu dikuasai</dt><dd>' + studied + ' <span class="muted">/ ' + questions.length + '</span></dd></div>' +
     '<div><dt>Perlu diulang</dt><dd>' + again + '</dd></div><div><dt>Sesi terakhir</dt><dd>' + escape(progress.history[0]?.score || '—') + '</dd></div></dl>' +
@@ -114,15 +237,17 @@ function renderHome() {
     '</section></aside></div>';
 }
 
-function start(items = shuffle(sourcePool()).slice(0, settings.count), mode=settings.mode) {
+function start(items = shuffle(sourcePool()).slice(0, settings.count), mode=settings.mode, timed) {
   if (!items.length) return;
   const optionOrder = Object.fromEntries(items.map(q => [q.id, shuffle(q.options.map((_, index) => index))]));
-  session = { items, optionOrder, mode, i:0, selected:{}, checked:{}, revealed:false, visited:{} };
+  session = { items, optionOrder, mode, timed, i:0, selected:{}, checked:{}, revealed:false, visited:{} };
   screen = 'session';
+  saveTimedExam();
   render(true);
+  if (timed) beginExamClock();
 }
 function renderSession() {
-  const {items,optionOrder,i,mode,selected,checked,revealed} = session;
+  const {items,optionOrder,i,mode,selected,checked,revealed,timed} = session;
   const q = items[i];
   const chosen = selected[q.id] || [];
   const order = optionOrder[q.id];
@@ -130,9 +255,13 @@ function renderSession() {
   const card = mode === 'cards';
   const graded = !!checked[q.id];
   const picks = q.answers.length;
-  main.innerHTML = '<section class="session"><div class="session-top">' + action('home','← Beranda') + '<span class="pill">' + modes[mode][0] + '</span></div>' +
+  main.innerHTML = '<section class="session"><div class="session-top">' + action('home',timed ? 'Keluar simulasi' : '← Beranda') +
+    '<span class="pill">' + (timed ? 'Simulasi penuh SY0-701' : modes[mode][0]) + '</span></div>' +
+    (timed ? '<div class="exam-toolbar"><div><span class="muted small">Sisa waktu</span>' +
+      '<span id="exam-clock" role="timer" class="exam-clock">' + formatExamTime(Math.max(0,timed.deadline-Date.now())) +
+      '</span></div><p id="exam-progress-status" class="muted small"></p>' + action('exam-map','Daftar soal','mini') + '</div>' : '') +
     '<div class="meta" role="status">' + (card ? 'KARTU ' : 'SOAL ') + (i+1) + ' / ' + items.length + '</div><progress class="progress" aria-label="Progres sesi" value="' + (i+1) + '" max="' + items.length + '"></progress>' +
-    '<article class="panel"><div class="pills"><span class="pill">PRACTICE TEST ' + q.set + ' · Q' + q.n + '</span>' + (!card ? '<span class="pill">' + (picks===1 ? 'PILIH SATU' : 'PILIH ' + picks + ' JAWABAN') + '</span>' : '') + '</div>' +
+    '<article class="panel"><div class="pills">' + (timed ? '' : '<span class="pill">PRACTICE TEST ' + q.set + ' · Q' + q.n + '</span>') + (!card ? '<span class="pill">' + (picks===1 ? 'PILIH SATU' : 'PILIH ' + picks + ' JAWABAN') + '</span>' : '') + '</div>' +
     (card ? renderCard(q, order, revealed, last) : prompt(q) + '<div class="choices" lang="en">' + order.map((index, position) => {
       const wasChosen = chosen.includes(index);
       const styling = graded ? q.answers.includes(index) ? ' correct' : wasChosen ? ' wrong' : '' : '';
@@ -142,10 +271,12 @@ function renderSession() {
     }).join('') + '</div>' +
     (graded ? '<p class="status-line' + (isCorrect(q,chosen)?'':' wrong') + '" role="status"><strong>' + (isCorrect(q,chosen)?'Benar.':'Jawaban yang benar') + '</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p>' + explanation(q) : '') +
     '<div class="actions spread">' + action('back','← Sebelumnya','secondary',i===0) + '<div class="actions" style="margin-top:0">' +
+    (timed ? '<button class="secondary" type="button" data-action="exam-flag" aria-pressed="' + !!timed.flagged[q.id] + '">Tandai soal</button>' : '') +
     (mode==='practice' && !graded ? action('skip',last?'Selesaikan':'Lewati') + action('check','Cek jawaban','primary',chosen.length!==picks) :
-      action('next',last?'Lihat hasil':'Selanjutnya →','primary')) + '</div></div>' +
-    (mode==='exam' ? '<p class="muted small" style="margin:9px 0 0">' + Object.values(selected).filter(a=>a.length).length + ' / ' + items.length + ' soal sudah diisi. Kamu bisa kembali sebelum melihat hasil.</p>' : '')) +
-    '</article></section>';
+      (timed && last ? action('exam-map','Tinjau &amp; akhiri','primary') : action('next',last?'Lihat hasil':'Selanjutnya →','primary'))) + '</div></div>' +
+    (mode==='exam' && !timed ? '<p class="muted small" style="margin:9px 0 0">' + Object.values(selected).filter(a=>a.length).length + ' / ' + items.length + ' soal sudah diisi. Kamu bisa kembali sebelum melihat hasil.</p>' : '')) +
+    '</article>' + (timed ? '<dialog id="exam-dialog" class="exam-dialog" aria-labelledby="exam-dialog-title"></dialog>' : '') + '</section>';
+  if (timed) updateExamProgress();
 }
 function renderCard(q, order, revealed, last) {
   const question = (q.stem ? '<span class="question" lang="en">' + escape(q.stem) + '</span>' : '') +
@@ -166,8 +297,14 @@ function renderCard(q, order, revealed, last) {
       action('again','Perlu diulang','mini') + action('known','Sudah paham','mini') + '</div>' : '');
 }
 
-function finish() {
-  const {items,mode,selected,visited} = session;
+function finish(reason = 'submitted') {
+  if (screen !== 'session') return;
+  const {items,mode,selected,visited,timed} = session;
+  if (timed) {
+    timed.reason = reason;
+    timed.elapsed = Math.max(0, Math.min(examDuration, Date.now() - (timed.deadline - examDuration)));
+    clearTimedExam();
+  }
   const correct = items.filter(q => isCorrect(q,selected[q.id])).length;
   const score = mode==='cards' ? Object.values(visited).filter(v=>v==='known').length : correct;
   progress.history.unshift({mode,score:score+'/'+items.length,date:new Date().toISOString()});
@@ -178,7 +315,7 @@ function finish() {
   render(true);
 }
 function renderResults() {
-  const {items,mode,selected,visited} = session;
+  const {items,mode,selected,visited,timed} = session;
   const card = mode==='cards';
   const correct = items.filter(q=>isCorrect(q,selected[q.id])).length;
   const known = Object.values(visited).filter(v=>v==='known').length;
@@ -190,7 +327,10 @@ function renderResults() {
     '<article class="panel"><p class="eyebrow">HASIL SESI</p><h1 class="score">' + score + ' / ' + items.length + '</h1><p class="muted">' +
     (card ? 'Kartu dikuasai · ' + again + ' perlu diulang · ' + (items.length-known-again) + ' belum ditandai' :
       'Jawaban benar · ' + Math.round(100*correct/items.length) + '% · ' + items.filter(q=>!selected[q.id]?.length).length + ' kosong') + '</p>' +
-    '<div class="actions">' + action('restart','Ulang sesi','primary') + action('retry',card?'Latih kartu yang perlu diulang':'Latih soal yang salah', 'secondary',!missed.length) + '</div>' +
+    (timed ? '<p class="exam-result-note">' + (timed.reason === 'expired' ? 'Waktu habis. Jawaban dikirim otomatis.' : 'Jawaban terkirim.') +
+      ' Waktu terpakai ' + formatExamTime(timed.elapsed) + ' dari 90 menit. Skor di atas adalah skor latihan.</p>' : '') +
+    '<div class="actions">' + action('restart',timed ? 'Simulasi penuh baru' : 'Ulang sesi','primary') +
+      action('retry',card?'Latih kartu yang perlu diulang':'Latih soal yang salah', 'secondary',!missed.length) + '</div>' +
     '<div class="review"><div class="section-head"><h2>Review jawaban</h2>' + action('filter',reviewOnlyMissed?'Tampilkan semua':'Filter perlu diulang','mini',!missed.length) + '</div>' +
     shown.map(q => '<details><summary><span class="meta">TEST ' + q.set + ' · Q' + q.n + '</span> ' +
       (card ? visited[q.id]==='known'?'Dikuasai':visited[q.id]==='again'?'Perlu diulang':'Belum ditandai' :
@@ -227,6 +367,10 @@ function applyRoute() {
   if (!questions.length) return;
   const route = readReviewRoute();
   if (!route && screen !== 'review') return;
+  if (screen === 'session' && session.timed) {
+    history.replaceState(null, '', location.pathname + location.search);
+    return;
+  }
   screen = route ? 'review' : 'home';
   render(true);
   const entry = route && main.querySelector('#review-q' + route.question);
@@ -252,7 +396,11 @@ function render(focus=false) {
   }
 }
 function advance() {
-  if (session.i === session.items.length-1) { finish(); return; }
+  if (session.i === session.items.length-1) {
+    if (session.timed) showExamDialog();
+    else finish();
+    return;
+  }
   moveQuestion(1);
 }
 function moveQuestion(step) {
@@ -260,12 +408,21 @@ function moveQuestion(step) {
   if (index < 0 || index >= session.items.length) return;
   session.i = index;
   session.revealed = false;
+  saveTimedExam();
   render(true);
 }
-function goHome() {
+function goHome(mode = settings.mode) {
+  if (screen === 'session' && session.timed) {
+    if (updateExamClock()) return false;
+    if (!window.confirm('Keluar dari simulasi penuh? Sesi ini akan berakhir tanpa skor.')) return false;
+    clearTimedExam();
+    session = undefined;
+  }
   if (readReviewRoute()) history.replaceState(null, '', location.pathname + location.search);
+  settings.mode = mode;
   screen = 'home';
   render(true);
+  return true;
 }
 function updateCount() {
   const raw = main.querySelector('#count').valueAsNumber;
@@ -279,14 +436,14 @@ document.querySelectorAll('.brand').forEach(link => {
 document.querySelector('.rail').addEventListener('click',event=>{
   const button=event.target.closest('button');
   if (!button || !questions.length) return;
-  if (button.dataset.consoleMode) settings.mode=button.dataset.consoleMode;
-  goHome();
-  if (button.dataset.consoleMode) main.querySelector('[data-mode="' + settings.mode + '"]').focus({preventScroll:true});
+  if (goHome(button.dataset.consoleMode) && button.dataset.consoleMode) {
+    main.querySelector('[data-mode="' + settings.mode + '"]').focus({preventScroll:true});
+  }
 });
 main.addEventListener('change',event=>{
   const input = event.target;
   if (input.id==='source') { updateCount(); settings.source=input.value; render(); main.querySelector('#source').focus(); }
-  if (input.name!=='answer') return;
+  if (input.name!=='answer' || updateExamClock()) return;
   const q=session.items[session.i];
   let selected=[...main.querySelectorAll('input[name="answer"]:checked')].map(item=>Number(item.value));
   if (selected.length > q.answers.length) {
@@ -294,6 +451,10 @@ main.addEventListener('change',event=>{
     selected=selected.filter(i=>i!==Number(input.value));
   }
   session.selected[q.id]=selected;
+  if (session.timed) {
+    saveTimedExam();
+    updateExamProgress();
+  }
   const check = main.querySelector('[data-action="check"]');
   if (check) check.disabled=selected.length!==q.answers.length;
 });
@@ -319,7 +480,7 @@ main.addEventListener('pointerup',event=>{
 
 main.addEventListener('click',event=>{
   const button = event.target.closest('button');
-  if (!button) return;
+  if (!button || updateExamClock()) return;
   if (button.dataset.mode) {
     updateCount();
     settings.mode=button.dataset.mode;
@@ -335,8 +496,23 @@ main.addEventListener('click',event=>{
   const act=button.dataset.action;
   if (act==='home') { goHome(); return; }
   if (act==='start') { updateCount(); start(); return; }
+  if (act==='start-timed') { startTimedExam(); return; }
   if (!session) return;
   const q = session.items[session.i];
+  if (button.dataset.examJump !== undefined) {
+    moveQuestion(Number(button.dataset.examJump) - session.i);
+    return;
+  }
+  if (act==='exam-map' || act==='exam-confirm') { showExamDialog(act==='exam-confirm'); return; }
+  if (act==='exam-close') { main.querySelector('#exam-dialog').close(); return; }
+  if (act==='exam-submit') { finish(); return; }
+  if (act==='exam-flag') {
+    session.timed.flagged[q.id] = !session.timed.flagged[q.id];
+    button.setAttribute('aria-pressed', String(session.timed.flagged[q.id]));
+    saveTimedExam();
+    updateExamProgress();
+    return;
+  }
   if (act==='check') { session.checked[q.id]=true; render(); main.querySelector('[data-action="next"]').focus(); }
   if (act==='next'||act==='skip') advance();
   if (act==='back') moveQuestion(-1);
@@ -349,7 +525,10 @@ main.addEventListener('click',event=>{
   }
   if (act==='again'||act==='known') { progress.marks[q.id]=act; session.visited[q.id]=act; persist(); advance(); }
   if (act==='filter') { reviewOnlyMissed=!reviewOnlyMissed; render(); main.querySelector('[data-action="filter"]').focus(); }
-  if (act==='restart') start(shuffle(session.items),session.mode);
+  if (act==='restart') {
+    if (session.timed) startTimedExam();
+    else start(shuffle(session.items),session.mode);
+  }
   if (act==='retry') start(session.items.filter(item => session.mode==='cards' ? session.visited[item.id]==='again' : !isCorrect(item,session.selected[item.id])),session.mode);
 });
 
@@ -361,6 +540,7 @@ fetch('bank.json?v=5').then(response=>{
 }).then(data=>{
   sets=data.sets;
   questions=data.questions;
+  if (restoreTimedExam()) return;
   if (readReviewRoute()) applyRoute();
   else render();
 }).catch(()=>{
