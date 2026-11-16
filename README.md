@@ -9,7 +9,7 @@ Web belajar CompTIA Security+ SY0-701 dengan materi lima domain, glosarium, kuis
 - style.css sebagai source tampilan.
 - materi.html berisi materi lima domain, glosarium, dan referensi.
 - bank.json dengan 452 soal, opsi, kunci, dan pembahasan dari lima practice test.
-- supplement.json dengan 135 soal tambahan dari DOCX dan empat PBQ interaktif.
+- supplement.json dengan 135 soal tambahan dari DOCX, 28 soal baru berlabel objective, dan 16 PBQ interaktif.
 - media/ dengan 22 gambar pendukung soal, opsi jawaban, dan referensi PBQ.
 
 Semua file aplikasi siap dilayani oleh web server static. Bank soal dimuat dari bank.json serta supplement.json, dan gambar dimuat dari media/ menggunakan path relatif.
@@ -58,4 +58,6 @@ Pilih **Buka materi** di dashboard untuk membaca lima domain dan glosarium. Pili
 
 Pembahasan juga tampil setelah memeriksa jawaban di mode latihan, saat membuka sisi jawaban flashcard, dan pada review hasil sesi. Simulasi menampilkan pembahasan setelah sesi selesai.
 
-Pilih sumber **Latihan PBQ** untuk mengerjakan skenario secara terpisah. **Simulasi penuh** mengambil 86 pilihan ganda acak dan empat PBQ dalam 90 menit. Setiap PBQ menghasilkan satu poin ketika semua bagiannya benar, dengan pembahasan per bagian setelah penilaian.
+Pilih sumber **Latihan PBQ** untuk mengerjakan skenario secara terpisah. **Simulasi penuh** mengambil 86 pilihan ganda acak dan empat dari 16 PBQ dalam 90 menit. Setiap PBQ menghasilkan satu poin ketika semua bagiannya benar, dengan pembahasan per bagian setelah penilaian.
+
+Sumber **Latihan per objective SY0-701** memuat satu skenario pilihan ganda baru untuk masing-masing 28 objective. Tautan blueprint resmi, bab contoh PDF, dan latihan publik tersedia di bagian **Referensi** pada halaman materi.

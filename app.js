@@ -36,6 +36,7 @@ let reviewOnlyMissed = false;
 let cardGesture;
 let suppressCardClick = false;
 let examInterval;
+let pbqDragChoice;
 
 function isPbq(q) {
   return q.type === 'pbq';
@@ -229,7 +230,8 @@ function keyNote(q) {
 function prompt(q) {
   const media = imagery(q);
   return (q.stem ? '<h2 class="question" lang="en">' + escape(q.stem) + '</h2>' : '') +
-    (isPbq(q) ? '<details class="pbq-reference"><summary>Gambar referensi PBQ</summary>' + media + '</details>' : media) +
+    (q.exhibit ? '<section class="pbq-exhibit" lang="en"><h3>Exhibit</h3><pre>' + escape(q.exhibit) + '</pre></section>' : '') +
+    (isPbq(q) && media ? '<details class="pbq-reference"><summary>Gambar referensi PBQ</summary>' + media + '</details>' : media) +
     (q.adapted ? '<p class="muted small">' + (q.set === 6 ? 'Soal disesuaikan dari dokumen sumber.' :
       'Detail teknis disederhanakan dari soal sumber.') + '</p>' : '');
 }
@@ -293,13 +295,80 @@ function start(items = shuffle(sourcePool()).slice(0, settings.count), mode=sett
   render(true);
   if (timed) beginExamClock();
 }
+function renderPbqSelect(q, order, selected, index, compactLabel) {
+  const task = q.tasks[index];
+  return '<label class="field pbq-field"><span' + (compactLabel ? ' class="pbq-cell-label"' : '') + '>' +
+    escape(compactLabel || task.label) + '</span><select data-pbq-step="' + index + '"' +
+    (compactLabel ? ' aria-label="' + escape(task.label) + '"' : '') +
+    '><option value="">Select an answer</option>' + order[index].map(choice =>
+      '<option value="' + choice + '"' + (choice === selected[index] ? ' selected' : '') + '>' +
+      escape(task.choices[choice]) + '</option>').join('') + '</select></label>';
+}
+function renderPbqSequence(q, order, selected) {
+  const choices = q.tasks[0].choices;
+  const picked = session.pbqPick;
+  return '<p class="muted">Drag an action into a step, or select an action and then select a step.</p>' +
+    '<div class="pbq-sequence"><section><h3>Available actions</h3><div class="pbq-actions">' + order[0].map(choice =>
+      '<button class="secondary" type="button" data-pbq-pick="' + choice + '" draggable="' + !selected.includes(choice) +
+      '" aria-pressed="' + (choice === picked) + '"' + (selected.includes(choice) ? ' disabled' : '') +
+      '>' + escape(choices[choice]) + '</button>').join('') + '</div></section>' +
+    '<section><h3>Steps in order</h3><ol class="pbq-slots">' + q.tasks.map((task, index) => {
+      const value = selected[index];
+      const filled = Number.isInteger(value);
+      const slotText = filled ? choices[value] : 'Drop or place an action here';
+      return '<li><button class="secondary pbq-slot" type="button" data-pbq-slot="' + index + '" aria-label="' +
+        escape(task.label + ': ' + slotText) + '"><span class="meta">' + escape(task.label) + '</span>' +
+        escape(slotText) + '</button>' + (filled ?
+        '<button class="secondary pbq-clear" type="button" data-pbq-clear="' + index + '" aria-label="Clear ' +
+        escape(task.label) + '">×</button>' : '') + '</li>';
+    }).join('') + '</ol></section></div>';
+}
 function renderPbqFields(q, order, selected) {
-  return '<div class="pbq-fields" lang="en">' + q.tasks.map((task, index) =>
-    '<label class="field pbq-field"><span>' + escape(task.label) + '</span>' +
-    '<select data-pbq-step="' + index + '"><option value="">Select an answer</option>' + order[index].map(choice =>
-      '<option value="' + choice + '"' + (choice === selected[index] ? ' selected' : '') +
-      (q.uniqueChoices && selected.includes(choice) && choice !== selected[index] ? ' disabled' : '') + '>' +
-      escape(task.choices[choice]) + '</option>').join('') + '</select></label>').join('') + '</div>';
+  const layout = q.layout;
+  const field = (index, label) => renderPbqSelect(q, order, selected, index, label);
+  let content;
+  if (layout?.kind === 'sequence') {
+    content = renderPbqSequence(q, order, selected);
+  } else if (layout?.kind === 'matrix') {
+    const columns = layout.headers.length;
+    content = '<div class="pbq-matrix" role="table" aria-label="Match the evidence to a decision">' +
+      '<div class="pbq-matrix-head" role="row"><span role="columnheader">Item</span>' +
+      layout.headers.map(header => '<span role="columnheader">' + escape(header) + '</span>').join('') + '</div>' +
+      layout.rows.map((row, i) => '<div class="pbq-matrix-row" role="row"><strong role="rowheader">' +
+        escape(row) + '</strong>' + layout.headers.map((header, j) =>
+          '<div role="cell">' + field(i * columns + j, header) + '</div>').join('') + '</div>').join('') + '</div>';
+  } else if (layout?.kind === 'topology') {
+    content = '<div class="pbq-topology" aria-label="Network diagram">' + layout.layers.map(layer =>
+      '<div class="pbq-nodes">' + layer.map(node => '<section class="pbq-node"><h3>' + escape(node.label) +
+        '</h3>' + node.tasks.map(index => field(index)).join('') + '</section>').join('') + '</div>').join('') + '</div>';
+  } else {
+    content = '<div class="pbq-fields">' + q.tasks.map((_, index) => field(index)).join('') + '</div>';
+  }
+  return '<div lang="en">' + content +
+    '<button class="mini pbq-reset" type="button" data-action="pbq-reset">Reset answers</button></div>';
+}
+function updatePbqBoard(q, focusSelector) {
+  const board = main.querySelector('#pbq-workspace');
+  if (!board) return;
+  board.innerHTML = renderPbqFields(q, session.optionOrder[q.id], session.selected[q.id] || []);
+  if (focusSelector) board.querySelector(focusSelector)?.focus({preventScroll:true});
+}
+function storeSelection(q, selected) {
+  session.selected[q.id] = selected;
+  if (session.timed) {
+    saveTimedExam();
+    updateExamProgress();
+  }
+  const check = main.querySelector('[data-action="check"]');
+  if (check) check.disabled = !isComplete(q, selected);
+}
+function placePbqChoice(q, slot, choice) {
+  const selected = q.tasks.map((_, i) => session.selected[q.id]?.[i] ?? null);
+  if (!Number.isInteger(choice) || !q.tasks[slot]?.choices[choice] || selected.includes(choice)) return;
+  selected[slot] = choice;
+  session.pbqPick = undefined;
+  storeSelection(q, selected);
+  updatePbqBoard(q, '[data-pbq-slot="' + slot + '"]');
 }
 function renderPbqReview(q, selected) {
   return '<ol class="pbq-review" lang="en">' + q.tasks.map((task, index) => {
@@ -327,11 +396,13 @@ function renderSession() {
       '<span id="exam-clock" role="timer" class="exam-clock">' + formatExamTime(Math.max(0,timed.deadline-Date.now())) +
       '</span></div><p id="exam-progress-status" class="muted small"></p>' + action('exam-map','Daftar soal','mini') + '</div>' : '') +
     '<div class="meta" role="status">' + (card ? 'KARTU ' : 'SOAL ') + (i+1) + ' / ' + items.length + '</div><progress class="progress" aria-label="Progres sesi" value="' + (i+1) + '" max="' + items.length + '"></progress>' +
-    '<article class="panel"><div class="pills">' + (timed ? '' : '<span class="pill">' + escape(setTitle(q.set)) + ' · Q' + q.n + '</span>') +
+    '<article class="panel"><div class="pills">' + (timed ? '' : '<span class="pill">' + escape(setTitle(q.set)) + ' · Q' + q.n + '</span>' +
+      (q.objective ? '<span class="pill">Objective ' + escape(q.objective) + '</span>' : '')) +
     (pbq ? '<span class="pill">PBQ · ' + q.tasks.length + ' BAGIAN</span>' :
       !card ? '<span class="pill">' + (picks===1 ? 'PILIH SATU' : 'PILIH ' + picks + ' JAWABAN') + '</span>' : '') + '</div>' +
     (card ? renderCard(q, order, revealed, last) : prompt(q) +
-    (pbq ? (graded ? renderPbqReview(q, chosen) : renderPbqFields(q, order, chosen)) :
+    (pbq ? (graded ? renderPbqReview(q, chosen) :
+      '<div id="pbq-workspace">' + renderPbqFields(q, order, chosen) + '</div>') :
     '<div class="choices" lang="en">' + order.map((index, position) => {
       const wasChosen = chosen.includes(index);
       const styling = graded ? q.answers.includes(index) ? ' correct' : wasChosen ? ' wrong' : '' : '';
@@ -415,8 +486,8 @@ function renderResults() {
 }
 
 function readReviewRoute() {
-  const match = location.hash.match(/^#pembahasan-([1-7])(?:-q([1-9][0-9]*))?$/);
-  if (!match) return null;
+  const match = location.hash.match(/^#pembahasan-([1-9][0-9]*)(?:-q([1-9][0-9]*))?$/);
+  if (!match || !sets.some(entry => entry.set === Number(match[1]))) return null;
   return { set: Number(match[1]), question: Number(match[2]) };
 }
 
@@ -429,7 +500,8 @@ function renderReview({set, question}) {
       (entry.set === set ? ' aria-current="true"' : '') + '>' + (entry.title ? escape(entry.title) : 'Test ' + entry.set) + '</a>').join('') + '</nav>' +
     '<article class="panel review"><h2>' + escape(setTitle(set)) + ' · ' + items.length + ' soal</h2>' +
     items.map(q => '<details id="review-q' + q.n + '"' + (q.n === question ? ' open' : '') + '><summary>' +
-      '<span class="meta">Q' + q.n + '</span> <span lang="en">' + escape(q.topic) + '</span></summary>' + prompt(q) +
+      '<span class="meta">Q' + q.n + '</span> <span lang="en">' + escape(q.topic) + '</span>' +
+      (q.objective ? ' <span class="meta">· Objective ' + escape(q.objective) + '</span>' : '') + '</summary>' + prompt(q) +
       (isPbq(q) ? renderPbqReview(q) :
       (q.answers.length > 1 ? '<p class="muted">Pilih ' + q.answers.length + ' jawaban.</p>' : '') +
       answerOptions(q, q.options.map((_, index) => index), false, q.n === question ? 'eager' : 'lazy') +
@@ -483,6 +555,7 @@ function moveQuestion(step) {
   if (index < 0 || index >= session.items.length) return;
   session.i = index;
   session.revealed = false;
+  session.pbqPick = undefined;
   saveTimedExam();
   render(true);
 }
@@ -522,16 +595,7 @@ main.addEventListener('change',event=>{
   const q=session.items[session.i];
   let selected;
   if (isPbq(q)) {
-    const fields = [...main.querySelectorAll('[data-pbq-step]')];
-    selected = fields.map(field => field.value === '' ? null : Number(field.value));
-    if (q.uniqueChoices) {
-      fields.forEach((field, index) => {
-        for (const option of field.options) {
-          const value = Number(option.value);
-          option.disabled = option.value !== '' && value !== selected[index] && selected.includes(value);
-        }
-      });
-    }
+    selected = [...main.querySelectorAll('[data-pbq-step]')].map(field => field.value === '' ? null : Number(field.value));
   } else {
     selected = [...main.querySelectorAll('input[name="answer"]:checked')].map(item=>Number(item.value));
     if (selected.length > q.answers.length) {
@@ -539,14 +603,26 @@ main.addEventListener('change',event=>{
       selected = selected.filter(i=>i!==Number(input.value));
     }
   }
-  session.selected[q.id]=selected;
-  if (session.timed) {
-    saveTimedExam();
-    updateExamProgress();
-  }
-  const check = main.querySelector('[data-action="check"]');
-  if (check) check.disabled=!isComplete(q,selected);
+  storeSelection(q, selected);
 });
+main.addEventListener('dragstart', event => {
+  const tile = event.target.closest('[data-pbq-pick]');
+  if (!tile || tile.disabled) return;
+  pbqDragChoice = Number(tile.dataset.pbqPick);
+  event.dataTransfer.setData('text/plain', tile.textContent);
+  event.dataTransfer.effectAllowed = 'move';
+});
+main.addEventListener('dragover', event => {
+  if (pbqDragChoice !== undefined && event.target.closest('[data-pbq-slot]')) event.preventDefault();
+});
+main.addEventListener('drop', event => {
+  const slot = event.target.closest('[data-pbq-slot]');
+  if (!slot || pbqDragChoice === undefined || updateExamClock()) return;
+  event.preventDefault();
+  placePbqChoice(session.items[session.i], Number(slot.dataset.pbqSlot), pbqDragChoice);
+  pbqDragChoice = undefined;
+});
+main.addEventListener('dragend', () => { pbqDragChoice = undefined; });
 main.addEventListener('pointerdown',event=>{
   if (!event.isPrimary || event.button!==0) return;
   suppressCardClick = false;
@@ -588,6 +664,30 @@ main.addEventListener('click',event=>{
   if (act==='start-timed') { startTimedExam(); return; }
   if (!session) return;
   const q = session.items[session.i];
+  if (button.dataset.pbqPick !== undefined) {
+    const choice = Number(button.dataset.pbqPick);
+    session.pbqPick = session.pbqPick === choice ? undefined : choice;
+    updatePbqBoard(q, '[data-pbq-pick="' + choice + '"]');
+    return;
+  }
+  if (button.dataset.pbqSlot !== undefined) {
+    placePbqChoice(q, Number(button.dataset.pbqSlot), session.pbqPick);
+    return;
+  }
+  if (button.dataset.pbqClear !== undefined) {
+    const slot = Number(button.dataset.pbqClear);
+    const selected = [...session.selected[q.id]];
+    selected[slot] = null;
+    storeSelection(q, selected);
+    updatePbqBoard(q, '[data-pbq-slot="' + slot + '"]');
+    return;
+  }
+  if (act === 'pbq-reset') {
+    session.pbqPick = undefined;
+    storeSelection(q, []);
+    updatePbqBoard(q, '[data-action="pbq-reset"]');
+    return;
+  }
   if (button.dataset.examJump !== undefined) {
     moveQuestion(Number(button.dataset.examJump) - session.i);
     return;
@@ -623,7 +723,7 @@ main.addEventListener('click',event=>{
 
 window.addEventListener('hashchange', applyRoute);
 
-Promise.all(['bank.json?v=5', 'supplement.json?v=1'].map(async url => {
+Promise.all(['bank.json?v=5', 'supplement.json?v=2'].map(async url => {
   const response = await fetch(url);
   if (!response.ok) throw new Error('Bank soal belum tersedia.');
   return response.json();
