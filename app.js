@@ -10,6 +10,7 @@ const modes = {
 const storageKey = 'security-plus-study-lab-v1';
 const timedExamKey = 'security-plus-timed-exam-v1';
 const examLength = 90;
+const examPbqCount = 4;
 const examDuration = 90 * 60 * 1000;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
@@ -36,10 +37,17 @@ let cardGesture;
 let suppressCardClick = false;
 let examInterval;
 
+function isPbq(q) {
+  return q.type === 'pbq';
+}
+function setTitle(set) {
+  return sets.find(entry => entry.set === set)?.title ?? ('Practice Test ' + set);
+}
 function sourcePool() {
-  if (settings.source === 'all') return questions;
-  if (settings.source === 'again') return questions.filter(q => progress.marks[q.id] === 'again');
-  return questions.filter(q => String(q.set) === settings.source);
+  const pool = settings.mode === 'cards' ? questions.filter(q => !isPbq(q)) : questions;
+  if (settings.source === 'all') return pool;
+  if (settings.source === 'again') return pool.filter(q => progress.marks[q.id] === 'again');
+  return pool.filter(q => String(q.set) === settings.source);
 }
 function shuffle(items) {
   const result = [...items];
@@ -49,8 +57,24 @@ function shuffle(items) {
   }
   return result;
 }
+function hasResponse(selected) {
+  return selected?.some(Number.isInteger) ?? false;
+}
+function isComplete(q, selected) {
+  return selected?.length === (isPbq(q) ? q.tasks.length : q.answers.length) &&
+    selected.every(Number.isInteger);
+}
 function isCorrect(q, selected) {
-  return selected?.length === q.answers.length && q.answers.every(index => selected.includes(index));
+  if (!isComplete(q, selected)) return false;
+  if (isPbq(q)) return q.tasks.every((task, index) => selected[index] === task.answer);
+  return q.answers.every(index => selected.includes(index));
+}
+function shuffleChoices(choices) {
+  return shuffle(choices.map((_, index) => index));
+}
+function validOrder(order, size) {
+  return Array.isArray(order) && order.length === size && new Set(order).size === size &&
+    order.every(index => Number.isInteger(index) && index >= 0 && index < size);
 }
 function formatExamTime(milliseconds) {
   const seconds = Math.ceil(milliseconds / 1000);
@@ -80,8 +104,11 @@ function restoreTimedExam() {
         !Number.isFinite(saved.timed.deadline) || !Number.isInteger(saved.i) || !items[saved.i] ||
         items.some(q => {
           const order = saved.optionOrder[q.id];
-          return order?.length !== q.options.length || new Set(order).size !== q.options.length ||
-            order.some(index => !Number.isInteger(index) || index < 0 || index >= q.options.length);
+          if (isPbq(q)) {
+            return order?.length !== q.tasks.length ||
+              q.tasks.some((task, index) => !validOrder(order[index], task.choices.length));
+          }
+          return !validOrder(order, q.options.length);
         })) {
       clearTimedExam();
       return false;
@@ -122,15 +149,18 @@ function beginExamClock() {
 }
 
 function startTimedExam() {
-  if (questions.length < examLength) return;
+  const mcq = questions.filter(q => !isPbq(q));
+  const pbq = questions.filter(isPbq);
+  if (mcq.length < examLength - examPbqCount || pbq.length < examPbqCount) return;
   settings.mode = 'exam';
-  start(shuffle(questions).slice(0, examLength), 'exam', {deadline:Date.now() + examDuration, flagged:{}});
+  const sample = shuffle(mcq).slice(0, examLength - examPbqCount).concat(shuffle(pbq).slice(0, examPbqCount));
+  start(shuffle(sample), 'exam', {deadline:Date.now() + examDuration, flagged:{}});
 }
 
 function examCounts() {
   const {items, selected, timed} = session;
   return {
-    incomplete: items.filter(q => selected[q.id]?.length !== q.answers.length).length,
+    incomplete: items.filter(q => !isComplete(q, selected[q.id])).length,
     flagged: Object.values(timed.flagged).filter(Boolean).length
   };
 }
@@ -153,7 +183,7 @@ function showExamDialog(confirmSubmission = false) {
     (confirmSubmission
       ? '<p>Setelah dikirim, hasil dan pembahasan akan langsung tampil.</p>'
       : '<div class="exam-question-grid">' + items.map((q, index) => {
-        const answered = selected[q.id]?.length === q.answers.length;
+        const answered = isComplete(q, selected[q.id]);
         const flagged = !!timed.flagged[q.id];
         const label = 'Soal ' + (index + 1) + (answered ? ', terjawab' : ', belum lengkap') + (flagged ? ', ditandai' : '');
         return '<button class="mini exam-question' + (answered ? ' exam-question-answered' : '') + '"' +
@@ -171,7 +201,9 @@ function answerText(q, indices) {
   return indices?.length ? indices.map(index => q.options[index]).join(' · ') : 'Tidak dijawab';
 }
 function imagery(q) {
-  return (q.media || []).map((name, index) => '<img class="question-image" src="media/' + escape(name) + '" alt="Lampiran soal ' + q.n + ', gambar ' + (index + 1) + '" loading="lazy" draggable="false">').join('');
+  return (q.media || []).map((name, index) => '<img class="question-image" src="media/' + escape(name) + '" alt="' +
+    (isPbq(q) ? 'Referensi PBQ tentang ' + escape(q.topic) : 'Lampiran soal ' + q.n + ', gambar ' + (index + 1)) +
+    '" loading="lazy" draggable="false">').join('');
 }
 function optionContent(q, index, loading = 'eager') {
   const image = q.optionMedia?.[index];
@@ -190,24 +222,31 @@ function explanation(q) {
   return q.explanation ? '<div class="explanation"><h3>Pembahasan</h3><p>' + escape(q.explanation) + '</p></div>' : '';
 }
 function keyNote(q) {
+  if (q.answerStatus === 'reviewed') return '<span class="key-note">Kunci ditinjau dari soal sumber.</span>';
   return q.answerStatus==='inferred'
     ? '<span class="key-note">Jawaban hasil analisis. Form tidak menampilkan kunci.</span>' : '';
 }
 function prompt(q) {
-  return (q.stem ? '<h2 class="question" lang="en">' + escape(q.stem) + '</h2>' : '') + imagery(q) +
-    (q.adapted ? '<p class="muted small">Detail teknis disederhanakan dari soal sumber.</p>' : '');
+  const media = imagery(q);
+  return (q.stem ? '<h2 class="question" lang="en">' + escape(q.stem) + '</h2>' : '') +
+    (isPbq(q) ? '<details class="pbq-reference"><summary>Gambar referensi PBQ</summary>' + media + '</details>' : media) +
+    (q.adapted ? '<p class="muted small">' + (q.set === 6 ? 'Soal disesuaikan dari dokumen sumber.' :
+      'Detail teknis disederhanakan dari soal sumber.') + '</p>' : '');
 }
 function action(name, label, type='secondary', disabled=false) {
   return '<button type="button" class="' + type + '" data-action="' + name + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>';
 }
 
 function renderHome() {
+  if (settings.mode === 'cards' && settings.source === '7') settings.source = 'all';
   const total = sourcePool().length;
   const studied = Object.values(progress.marks).filter(value => value === 'known').length;
   const again = Object.values(progress.marks).filter(value => value === 'again').length;
   settings.count = Math.min(total || 1, Math.max(1, settings.count || 1));
   const select = (value,label) => '<option value="' + value + '"' + (settings.source === value ? ' selected' : '') + '>' + label + '</option>';
-  const studiedPercent = questions.length ? Math.round(100*studied/questions.length) : 0;
+  const cardCount = questions.filter(q => !isPbq(q)).length;
+  const canStartTimed = cardCount >= examLength - examPbqCount && questions.length - cardCount >= examPbqCount;
+  const studiedPercent = cardCount ? Math.round(100*studied/cardCount) : 0;
   main.innerHTML = '<div class="page-heading"><h1>Security+ Study Lab <span class="course-code">SY0-701</span></h1></div>' +
     '<nav class="panel study-entry" aria-label="Bahan belajar"><div><h2>Materi dan pembahasan</h2><p class="muted">Lima domain ujian, glosarium, dan pembahasan setiap soal.</p></div>' +
     '<div class="actions"><a class="primary" href="materi.html">Buka materi</a><a class="secondary" href="#pembahasan-1">Pembahasan soal</a></div></nav>' +
@@ -215,22 +254,28 @@ function renderHome() {
     '<div class="grid"><section class="panel"><div class="section-head"><h2>Mulai latihan</h2></div>' +
     '<div class="modes" aria-label="Mode belajar">' + Object.entries(modes).map(([id, mode]) => '<button class="mode" type="button" data-mode="' + id + '" aria-pressed="' + (settings.mode===id) + '"><strong>' + mode[0] + '</strong><span>' + mode[1] + '</span></button>').join('') + '</div>' +
     (settings.mode === 'exam' ? '<section class="timed-exam-start"><h3>Simulasi penuh SY0-701</h3>' +
-      '<p class="muted">90 soal acak dari semua practice test · 90 menit</p><div class="actions">' +
-      action('start-timed','Mulai simulasi penuh','primary',questions.length < examLength) + '</div></section>' +
+      '<p class="muted">86 pilihan ganda acak + 4 PBQ · 90 menit</p><div class="actions">' +
+      action('start-timed','Mulai simulasi penuh','primary',!canStartTimed) + '</div></section>' +
       '<h3 class="exam-custom-title">Simulasi tanpa timer</h3>' : '') +
     '<div class="fields"><label class="field"><span>Sumber soal</span><select id="source">' + select('all', 'Campur semua set') +
-    sets.map(s => select(String(s.set),'Practice Test ' + s.set + ' (' + s.count + ')')).join('') + select('again','Perlu diulang (' + again + ')') +
+    sets.filter(s => settings.mode !== 'cards' || s.set !== 7)
+      .map(s => select(String(s.set),escape(setTitle(s.set)) + ' (' + s.count + ')')).join('') + select('again','Perlu diulang (' + again + ')') +
     '</select></label><label class="field"><span>Jumlah soal</span><input id="count" type="number" min="1" max="' + total + '" value="' + (total ? settings.count : '') + '"' + (!total ? ' disabled' : '') + '></label></div>' +
     '<div class="count-list" aria-label="Pilihan jumlah soal">' + [10,25,50].filter(n => n < total).map(n => '<button class="mini" type="button" data-count="' + n + '">' + n + '</button>').join('') + (total ? '<button class="mini" type="button" data-count="' + total + '">Semua (' + total + ')</button>' : '') + '</div>' +
     '<div class="actions">' + action('start',settings.mode === 'exam' ? 'Mulai tanpa timer' : 'Mulai sesi →',settings.mode === 'exam' ? 'secondary' : 'primary',!total) + '<span class="muted small">' + total + ' soal tersedia dari sumber ini</span></div></section>' +
     '<aside class="dashboard-sidebar"><section class="panel"><div class="section-head"><h2>Progres belajar</h2></div>' +
-    '<dl class="activity-cells"><div><dt>Kartu dikuasai</dt><dd>' + studied + ' <span class="muted">/ ' + questions.length + '</span></dd></div>' +
+    '<dl class="activity-cells"><div><dt>Kartu dikuasai</dt><dd>' + studied + ' <span class="muted">/ ' + cardCount + '</span></dd></div>' +
     '<div><dt>Perlu diulang</dt><dd>' + again + '</dd></div><div><dt>Sesi terakhir</dt><dd>' + escape(progress.history[0]?.score || '—') + '</dd></div></dl>' +
     '<meter class="segment-meter" min="0" max="100" value="' + studiedPercent + '" aria-label="Persentase kartu dikuasai"></meter>' +
     (progress.history.length ? '<ul class="history-list" aria-label="Riwayat sesi">' + progress.history.slice(0,3).map(h => '<li><span>' + escape(modes[h.mode]?.[0]) + ' · ' + escape(h.score) + '</span><time>' + escape(new Date(h.date).toLocaleDateString('id-ID',{timeZone:'Asia/Jakarta'})) + '</time></li>').join('') + '</ul>' : '') +
     '</section><section class="panel"><div class="section-head"><h2>Bank soal</h2></div><ul class="source-list">' +
-    sets.map(s => '<li><a href="https://forms.office.com/r/' + sourceLinks[s.set-1] + '" target="_blank" rel="noopener noreferrer">Practice Test ' + s.set + ' <span aria-hidden="true">↗</span></a>' +
-      '<span class="muted">' + s.count + (s.count < s.expected ? ' / ' + s.expected : '') + ' soal</span></li>').join('') +
+    sets.map(s => {
+      const title = escape(setTitle(s.set));
+      const source = sourceLinks[s.set-1];
+      const link = source ? '<a href="https://forms.office.com/r/' + source + '" target="_blank" rel="noopener noreferrer">' +
+        title + ' <span aria-hidden="true">↗</span></a>' : '<a href="#pembahasan-' + s.set + '">' + title + '</a>';
+      return '<li>' + link + '<span class="muted">' + s.count + (s.count < s.expected ? ' / ' + s.expected : '') + ' soal</span></li>';
+    }).join('') +
     '</ul>' +
     (questions.some(q=>q.answerStatus==='inferred') ? '<p class="muted small source-note">' +
       questions.filter(q=>q.answerStatus==='inferred').length + ' jawaban hasil analisis diberi label di tiap soal.</p>' : '') +
@@ -239,12 +284,32 @@ function renderHome() {
 
 function start(items = shuffle(sourcePool()).slice(0, settings.count), mode=settings.mode, timed) {
   if (!items.length) return;
-  const optionOrder = Object.fromEntries(items.map(q => [q.id, shuffle(q.options.map((_, index) => index))]));
+  const optionOrder = Object.fromEntries(items.map(q => [
+    q.id, isPbq(q) ? q.tasks.map(task => shuffleChoices(task.choices)) : shuffleChoices(q.options)
+  ]));
   session = { items, optionOrder, mode, timed, i:0, selected:{}, checked:{}, revealed:false, visited:{} };
   screen = 'session';
   saveTimedExam();
   render(true);
   if (timed) beginExamClock();
+}
+function renderPbqFields(q, order, selected) {
+  return '<div class="pbq-fields" lang="en">' + q.tasks.map((task, index) =>
+    '<label class="field pbq-field"><span>' + escape(task.label) + '</span>' +
+    '<select data-pbq-step="' + index + '"><option value="">Select an answer</option>' + order[index].map(choice =>
+      '<option value="' + choice + '"' + (choice === selected[index] ? ' selected' : '') +
+      (q.uniqueChoices && selected.includes(choice) && choice !== selected[index] ? ' disabled' : '') + '>' +
+      escape(task.choices[choice]) + '</option>').join('') + '</select></label>').join('') + '</div>';
+}
+function renderPbqReview(q, selected) {
+  return '<ol class="pbq-review" lang="en">' + q.tasks.map((task, index) => {
+    const chosen = selected?.[index];
+    const answer = escape(task.choices[task.answer]);
+    return '<li><strong>' + escape(task.label) + '</strong>' +
+      (selected ? '<p class="' + (chosen === task.answer ? 'correct-answer' : 'muted') + '">Your answer: ' +
+        (Number.isInteger(chosen) ? escape(task.choices[chosen]) : 'Unanswered') + '</p>' : '') +
+      '<p>Correct answer: ' + answer + '</p></li>';
+  }).join('') + '</ol>';
 }
 function renderSession() {
   const {items,optionOrder,i,mode,selected,checked,revealed,timed} = session;
@@ -254,33 +319,40 @@ function renderSession() {
   const last = i === items.length-1;
   const card = mode === 'cards';
   const graded = !!checked[q.id];
-  const picks = q.answers.length;
+  const picks = q.answers?.length;
+  const pbq = isPbq(q);
   main.innerHTML = '<section class="session"><div class="session-top">' + action('home',timed ? 'Keluar simulasi' : '← Beranda') +
     '<span class="pill">' + (timed ? 'Simulasi penuh SY0-701' : modes[mode][0]) + '</span></div>' +
     (timed ? '<div class="exam-toolbar"><div><span class="muted small">Sisa waktu</span>' +
       '<span id="exam-clock" role="timer" class="exam-clock">' + formatExamTime(Math.max(0,timed.deadline-Date.now())) +
       '</span></div><p id="exam-progress-status" class="muted small"></p>' + action('exam-map','Daftar soal','mini') + '</div>' : '') +
     '<div class="meta" role="status">' + (card ? 'KARTU ' : 'SOAL ') + (i+1) + ' / ' + items.length + '</div><progress class="progress" aria-label="Progres sesi" value="' + (i+1) + '" max="' + items.length + '"></progress>' +
-    '<article class="panel"><div class="pills">' + (timed ? '' : '<span class="pill">PRACTICE TEST ' + q.set + ' · Q' + q.n + '</span>') + (!card ? '<span class="pill">' + (picks===1 ? 'PILIH SATU' : 'PILIH ' + picks + ' JAWABAN') + '</span>' : '') + '</div>' +
-    (card ? renderCard(q, order, revealed, last) : prompt(q) + '<div class="choices" lang="en">' + order.map((index, position) => {
+    '<article class="panel"><div class="pills">' + (timed ? '' : '<span class="pill">' + escape(setTitle(q.set)) + ' · Q' + q.n + '</span>') +
+    (pbq ? '<span class="pill">PBQ · ' + q.tasks.length + ' BAGIAN</span>' :
+      !card ? '<span class="pill">' + (picks===1 ? 'PILIH SATU' : 'PILIH ' + picks + ' JAWABAN') + '</span>' : '') + '</div>' +
+    (card ? renderCard(q, order, revealed, last) : prompt(q) +
+    (pbq ? (graded ? renderPbqReview(q, chosen) : renderPbqFields(q, order, chosen)) :
+    '<div class="choices" lang="en">' + order.map((index, position) => {
       const wasChosen = chosen.includes(index);
       const styling = graded ? q.answers.includes(index) ? ' correct' : wasChosen ? ' wrong' : '' : '';
       return '<label class="option' + styling + '"><input type="' + (picks===1 ? 'radio' : 'checkbox') + '" name="answer" value="' + index + '"' + (wasChosen?' checked':'') + (graded?' disabled':'') +
         '>' + (q.optionMedia ? '' : '<span class="letter" aria-hidden="true">' + String.fromCharCode(65+position) + '</span>') +
         '<span class="label">' + optionContent(q,index) + '</span></label>';
-    }).join('') + '</div>' +
-    (graded ? '<p class="status-line' + (isCorrect(q,chosen)?'':' wrong') + '" role="status"><strong>' + (isCorrect(q,chosen)?'Benar.':'Jawaban yang benar') + '</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p>' + explanation(q) : '') +
+    }).join('') + '</div>') +
+    (graded ? '<p class="status-line' + (isCorrect(q,chosen)?'':' wrong') + '" role="status"><strong>' + (isCorrect(q,chosen)?'Benar.':pbq?'Periksa jawaban per bagian.':'Jawaban yang benar') + '</strong>' +
+      (pbq ? '' : ' <span lang="en">' + escape(answerText(q,q.answers)) + '</span>') + keyNote(q) + '</p>' + explanation(q) : '') +
     '<div class="actions spread">' + action('back','← Sebelumnya','secondary',i===0) + '<div class="actions" style="margin-top:0">' +
     (timed ? '<button class="secondary" type="button" data-action="exam-flag" aria-pressed="' + !!timed.flagged[q.id] + '">Tandai soal</button>' : '') +
-    (mode==='practice' && !graded ? action('skip',last?'Selesaikan':'Lewati') + action('check','Cek jawaban','primary',chosen.length!==picks) :
+    (mode==='practice' && !graded ? action('skip',last?'Selesaikan':'Lewati') + action('check','Cek jawaban','primary',!isComplete(q,chosen)) :
       (timed && last ? action('exam-map','Tinjau &amp; akhiri','primary') : action('next',last?'Lihat hasil':'Selanjutnya →','primary'))) + '</div></div>' +
-    (mode==='exam' && !timed ? '<p class="muted small" style="margin:9px 0 0">' + Object.values(selected).filter(a=>a.length).length + ' / ' + items.length + ' soal sudah diisi. Kamu bisa kembali sebelum melihat hasil.</p>' : '')) +
+    (mode==='exam' && !timed ? '<p class="muted small" style="margin:9px 0 0">' + items.filter(q=>isComplete(q,selected[q.id])).length + ' / ' + items.length + ' soal sudah diisi. Kamu bisa kembali sebelum melihat hasil.</p>' : '')) +
     '</article>' + (timed ? '<dialog id="exam-dialog" class="exam-dialog" aria-labelledby="exam-dialog-title"></dialog>' : '') + '</section>';
   if (timed) updateExamProgress();
 }
 function renderCard(q, order, revealed, last) {
   const question = (q.stem ? '<span class="question" lang="en">' + escape(q.stem) + '</span>' : '') +
-    (q.adapted ? '<span class="muted small">Detail teknis disederhanakan dari soal sumber.</span>' : '');
+    (q.adapted ? '<span class="muted small">' + (q.set === 6 ? 'Soal disesuaikan dari dokumen sumber.' :
+      'Detail teknis disederhanakan dari soal sumber.') + '</span>' : '');
   const media = imagery(q);
   const optionMedia = q.optionMedia ? '<span class="flashcard-option-grid" lang="en">' +
     order.map(index => '<span>' + optionContent(q, index) + '</span>').join('') + '</span>' : '';
@@ -326,22 +398,24 @@ function renderResults() {
   main.innerHTML = '<section class="session"><div class="session-top">' + action('home','← Beranda') + '<span class="pill">' + modes[mode][0] + '</span></div>' +
     '<article class="panel"><p class="eyebrow">HASIL SESI</p><h1 class="score">' + score + ' / ' + items.length + '</h1><p class="muted">' +
     (card ? 'Kartu dikuasai · ' + again + ' perlu diulang · ' + (items.length-known-again) + ' belum ditandai' :
-      'Jawaban benar · ' + Math.round(100*correct/items.length) + '% · ' + items.filter(q=>!selected[q.id]?.length).length + ' kosong') + '</p>' +
+      'Jawaban benar · ' + Math.round(100*correct/items.length) + '% · ' + items.filter(q=>!hasResponse(selected[q.id])).length + ' kosong') + '</p>' +
     (timed ? '<p class="exam-result-note">' + (timed.reason === 'expired' ? 'Waktu habis. Jawaban dikirim otomatis.' : 'Jawaban terkirim.') +
-      ' Waktu terpakai ' + formatExamTime(timed.elapsed) + ' dari 90 menit. Skor di atas adalah skor latihan.</p>' : '') +
+      ' Waktu terpakai ' + formatExamTime(timed.elapsed) + ' dari 90 menit. Tiap PBQ bernilai satu poin jika semua bagian benar.</p>' : '') +
     '<div class="actions">' + action('restart',timed ? 'Simulasi penuh baru' : 'Ulang sesi','primary') +
       action('retry',card?'Latih kartu yang perlu diulang':'Latih soal yang salah', 'secondary',!missed.length) + '</div>' +
     '<div class="review"><div class="section-head"><h2>Review jawaban</h2>' + action('filter',reviewOnlyMissed?'Tampilkan semua':'Filter perlu diulang','mini',!missed.length) + '</div>' +
-    shown.map(q => '<details><summary><span class="meta">TEST ' + q.set + ' · Q' + q.n + '</span> ' +
+    shown.map(q => '<details><summary><span class="meta">' + escape(setTitle(q.set)) + ' · Q' + q.n + '</span> ' +
       (card ? visited[q.id]==='known'?'Dikuasai':visited[q.id]==='again'?'Perlu diulang':'Belum ditandai' :
-        isCorrect(q,selected[q.id])?'Benar':selected[q.id]?.length?'Salah':'Kosong') + ' · <span lang="en">' +
+        isCorrect(q,selected[q.id])?'Benar':hasResponse(selected[q.id])?'Salah':'Kosong') + ' · <span lang="en">' +
       escape(q.stem?.split('\n')[0].slice(0,100)||'Soal bergambar') + '</span></summary>' + prompt(q) +
+      (isPbq(q) ? renderPbqReview(q, selected[q.id] || []) :
       (card ? '' : '<p>Jawabanmu <span lang="en">' + escape(answerText(q,selected[q.id])) + '</span></p>') +
-      '<p><strong>Kunci jawaban</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p>' + answerOptions(q, q.options.map((_, index) => index), true) + explanation(q) + '</details>').join('') + '</div></article></section>';
+      '<p><strong>Kunci jawaban</strong> <span lang="en">' + escape(answerText(q,q.answers)) + '</span>' + keyNote(q) + '</p>' +
+      answerOptions(q, q.options.map((_, index) => index), true)) + explanation(q) + '</details>').join('') + '</div></article></section>';
 }
 
 function readReviewRoute() {
-  const match = location.hash.match(/^#pembahasan-([1-5])(?:-q([1-9][0-9]*))?$/);
+  const match = location.hash.match(/^#pembahasan-([1-7])(?:-q([1-9][0-9]*))?$/);
   if (!match) return null;
   return { set: Number(match[1]), question: Number(match[2]) };
 }
@@ -352,13 +426,14 @@ function renderReview({set, question}) {
     '<a class="secondary" href="materi.html">Materi</a></div><h1>Pembahasan latihan</h1>' +
     '<nav class="study-sets" aria-label="Pilih practice test">' + sets.map(entry =>
       '<a class="' + (entry.set === set ? 'primary' : 'secondary') + '" href="#pembahasan-' + entry.set + '"' +
-      (entry.set === set ? ' aria-current="true"' : '') + '>Test ' + entry.set + '</a>').join('') + '</nav>' +
-    '<article class="panel review"><h2>Practice Test ' + set + ' · ' + items.length + ' soal</h2>' +
+      (entry.set === set ? ' aria-current="true"' : '') + '>' + (entry.title ? escape(entry.title) : 'Test ' + entry.set) + '</a>').join('') + '</nav>' +
+    '<article class="panel review"><h2>' + escape(setTitle(set)) + ' · ' + items.length + ' soal</h2>' +
     items.map(q => '<details id="review-q' + q.n + '"' + (q.n === question ? ' open' : '') + '><summary>' +
       '<span class="meta">Q' + q.n + '</span> <span lang="en">' + escape(q.topic) + '</span></summary>' + prompt(q) +
+      (isPbq(q) ? renderPbqReview(q) :
       (q.answers.length > 1 ? '<p class="muted">Pilih ' + q.answers.length + ' jawaban.</p>' : '') +
       answerOptions(q, q.options.map((_, index) => index), false, q.n === question ? 'eager' : 'lazy') +
-      '<div class="review-key"><h3>Kunci jawaban</h3>' + answerOptions(q,q.answers,true) + keyNote(q) + '</div>' +
+      '<div class="review-key"><h3>Kunci jawaban</h3>' + answerOptions(q,q.answers,true) + keyNote(q) + '</div>') +
       explanation(q) + '<a class="question-link" href="#pembahasan-' + set + '-q' + q.n + '">Tautan soal Q' + q.n + '</a></details>').join('') +
     '</article></section>';
 }
@@ -443,12 +518,26 @@ document.querySelector('.rail').addEventListener('click',event=>{
 main.addEventListener('change',event=>{
   const input = event.target;
   if (input.id==='source') { updateCount(); settings.source=input.value; render(); main.querySelector('#source').focus(); }
-  if (input.name!=='answer' || updateExamClock()) return;
+  if ((input.name !== 'answer' && input.dataset?.pbqStep === undefined) || updateExamClock()) return;
   const q=session.items[session.i];
-  let selected=[...main.querySelectorAll('input[name="answer"]:checked')].map(item=>Number(item.value));
-  if (selected.length > q.answers.length) {
-    input.checked=false;
-    selected=selected.filter(i=>i!==Number(input.value));
+  let selected;
+  if (isPbq(q)) {
+    const fields = [...main.querySelectorAll('[data-pbq-step]')];
+    selected = fields.map(field => field.value === '' ? null : Number(field.value));
+    if (q.uniqueChoices) {
+      fields.forEach((field, index) => {
+        for (const option of field.options) {
+          const value = Number(option.value);
+          option.disabled = option.value !== '' && value !== selected[index] && selected.includes(value);
+        }
+      });
+    }
+  } else {
+    selected = [...main.querySelectorAll('input[name="answer"]:checked')].map(item=>Number(item.value));
+    if (selected.length > q.answers.length) {
+      input.checked = false;
+      selected = selected.filter(i=>i!==Number(input.value));
+    }
   }
   session.selected[q.id]=selected;
   if (session.timed) {
@@ -456,7 +545,7 @@ main.addEventListener('change',event=>{
     updateExamProgress();
   }
   const check = main.querySelector('[data-action="check"]');
-  if (check) check.disabled=selected.length!==q.answers.length;
+  if (check) check.disabled=!isComplete(q,selected);
 });
 main.addEventListener('pointerdown',event=>{
   if (!event.isPrimary || event.button!==0) return;
@@ -534,12 +623,13 @@ main.addEventListener('click',event=>{
 
 window.addEventListener('hashchange', applyRoute);
 
-fetch('bank.json?v=5').then(response=>{
+Promise.all(['bank.json?v=5', 'supplement.json?v=1'].map(async url => {
+  const response = await fetch(url);
   if (!response.ok) throw new Error('Bank soal belum tersedia.');
   return response.json();
-}).then(data=>{
-  sets=data.sets;
-  questions=data.questions;
+})).then(banks => {
+  sets = banks.flatMap(data => data.sets);
+  questions = banks.flatMap(data => data.questions);
   if (restoreTimedExam()) return;
   if (readReviewRoute()) applyRoute();
   else render();

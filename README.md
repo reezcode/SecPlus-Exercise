@@ -9,9 +9,10 @@ Web belajar CompTIA Security+ SY0-701 dengan materi lima domain, glosarium, kuis
 - style.css sebagai source tampilan.
 - materi.html berisi materi lima domain, glosarium, dan referensi.
 - bank.json dengan 452 soal, opsi, kunci, dan pembahasan dari lima practice test.
-- media/ dengan 18 gambar pendukung soal dan opsi jawaban.
+- supplement.json dengan 135 soal tambahan dari DOCX dan empat PBQ interaktif.
+- media/ dengan 22 gambar pendukung soal, opsi jawaban, dan referensi PBQ.
 
-Semua file aplikasi siap dilayani oleh web server static. Bank soal dimuat dari bank.json dan gambar dimuat dari media/ menggunakan path relatif.
+Semua file aplikasi siap dilayani oleh web server static. Bank soal dimuat dari bank.json serta supplement.json, dan gambar dimuat dari media/ menggunakan path relatif.
 
 ## Jalankan di komputer sendiri
 
@@ -25,7 +26,7 @@ Buka http://localhost:8080 di browser. Gunakan HTTP server untuk menjalankan apl
 
 ## Hosting sendiri
 
-Upload isi ZIP ke document root hosting, misalnya public_html. index.html, materi.html, app.js, style.css, bank.json, dan folder media harus berada pada tingkat folder yang sama.
+Upload isi ZIP ke document root hosting, misalnya public_html. index.html, materi.html, app.js, style.css, bank.json, supplement.json, dan folder media harus berada pada tingkat folder yang sama.
 
 Pada Nginx atau Apache, arahkan document root ke folder hasil ekstraksi dan gunakan index.html sebagai index. File juga dapat diletakkan di subfolder seperti /security-plus/.
 
@@ -56,3 +57,5 @@ Tautan lima form sumber tersedia pada dashboard. Penomoran Q mengikuti nomor pad
 Pilih **Buka materi** di dashboard untuk membaca lima domain dan glosarium. Pilih **Pembahasan soal** untuk memilih practice test, membuka soal, dan melihat opsi, gambar, kunci, serta alasannya. Tautan seperti `./#pembahasan-1-q52` membuka soal tertentu langsung.
 
 Pembahasan juga tampil setelah memeriksa jawaban di mode latihan, saat membuka sisi jawaban flashcard, dan pada review hasil sesi. Simulasi menampilkan pembahasan setelah sesi selesai.
+
+Pilih sumber **Latihan PBQ** untuk mengerjakan skenario secara terpisah. **Simulasi penuh** mengambil 86 pilihan ganda acak dan empat PBQ dalam 90 menit. Setiap PBQ menghasilkan satu poin ketika semua bagiannya benar, dengan pembahasan per bagian setelah penilaian.

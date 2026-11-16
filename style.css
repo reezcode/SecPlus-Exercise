@@ -439,3 +439,33 @@ main.shell { padding-block: clamp(1.5rem, 4vw, 3rem); min-height: 68vh; }
 .exam-question[aria-current="step"] { outline: 2px solid var(--focus); outline-offset: -2px; }
 .exam-question span { color: var(--amber); }
 .exam-result-note { margin-top: .75rem; color: var(--sub); }
+
+.pbq-reference {
+  margin-block: .75rem 1.25rem;
+  padding-inline: .75rem;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.pbq-reference summary {
+  min-height: 2.75rem;
+  padding: .625rem 0;
+  color: var(--focus);
+  font-weight: 600;
+}
+.pbq-reference img { margin-top: .25rem; }
+.pbq-fields { display: grid; gap: .875rem; margin-block: 1rem; }
+.pbq-field {
+  padding: .875rem;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel2);
+}
+.pbq-review {
+  display: grid;
+  gap: .75rem;
+  margin: 1rem 0;
+  padding-left: 1.625rem;
+}
+.pbq-review li { padding-block: .5rem; border-bottom: 1px solid var(--edge); }
+.pbq-review li > p { margin-top: .25rem; }
