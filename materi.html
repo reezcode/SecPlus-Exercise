@@ -369,5 +369,169 @@
   </section>
 </main>
 <footer class="shell footer"><a href="#daftar-isi">↑ Daftar isi</a><a href="./">Kembali ke latihan</a></footer>
+<script>
+(() => {
+  const intro = document.querySelector('.study-intro');
+  const note = document.createElement('p');
+  note.className = 'muted';
+  intro.after(note);
+  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
+    note.textContent = 'Pemutaran audio tidak tersedia di browser ini.';
+    return;
+  }
+  note.textContent = 'Pilih Dengarkan di judul bab atau subbagian. Narasi mengikuti teks materi dan memakai suara yang tersedia di perangkat.';
+  const synth = window.speechSynthesis;
+  let session = null;
+
+  function readText(node) {
+    const copy = node.cloneNode(true);
+    copy.querySelectorAll('a[href^="#ref-"]').forEach(link => link.remove());
+    return copy.textContent.replace(/\s+/g, ' ').replace(/ +([.,])/g, '$1').trim();
+  }
+
+  function spokenBlocks(node) {
+    if (node.matches('h2, h3, p, aside')) {
+      return node.matches('.study-back') ? [] : [readText(node)];
+    }
+    if (node.matches('.study-table')) {
+      const headers = [...node.querySelectorAll('thead th')].map(readText);
+      return [...node.querySelectorAll('tbody tr')].map(row =>
+        [...row.cells].map((cell, index) =>
+          (index && headers[index] ? headers[index] + ': ' : '') + readText(cell)
+        ).join('. ')
+      );
+    }
+    if (node.matches('dl')) {
+      return [...node.children].map(entry =>
+        [...entry.children].map(readText).join('. ')
+      );
+    }
+    return [];
+  }
+
+  function makeChunks(blocks) {
+    return blocks.flatMap(block => {
+      const chunks = [];
+      let chunk = '';
+      for (const word of block.split(/\s+/).filter(Boolean)) {
+        if (chunk && chunk.length + word.length + 1 > 190) {
+          chunks.push(chunk);
+          chunk = '';
+        }
+        chunk += (chunk ? ' ' : '') + word;
+        if (chunk.length > 80 && /[.!?]$/.test(word)) {
+          chunks.push(chunk);
+          chunk = '';
+        }
+      }
+      if (chunk) chunks.push(chunk);
+      return chunks;
+    });
+  }
+
+  function finish(message = '') {
+    if (!session) return;
+    const previous = session;
+    session = null;
+    previous.play.textContent = 'Dengarkan';
+    previous.play.setAttribute('aria-label', 'Dengarkan ' + previous.title);
+    previous.stopControl.hidden = true;
+    previous.status.textContent = message;
+    synth.cancel();
+    if (synth.paused) synth.resume();
+  }
+
+  function speakNext(current) {
+    if (session !== current) return;
+    if (current.index === current.chunks.length) {
+      finish('Selesai.');
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(current.chunks[current.index]);
+    utterance.lang = 'id-ID';
+    if (current.voice) utterance.voice = current.voice;
+    current.utterance = utterance;
+    utterance.onend = () => {
+      current.index += 1;
+      speakNext(current);
+    };
+    utterance.onerror = () => {
+      if (session === current) {
+        finish('Audio gagal diputar. Cek ketersediaan suara bahasa Indonesia di pengaturan perangkat atau coba browser lain.');
+      }
+    };
+    synth.speak(utterance);
+  }
+
+  function addControls(heading, blocks, title) {
+    const controls = document.createElement('div');
+    controls.className = 'actions';
+    const play = document.createElement('button');
+    const stop = document.createElement('button');
+    for (const button of [play, stop]) {
+      button.type = 'button';
+      button.className = 'secondary';
+    }
+    play.textContent = 'Dengarkan';
+    play.setAttribute('aria-label', 'Dengarkan ' + title);
+    stop.textContent = 'Berhenti';
+    stop.setAttribute('aria-label', 'Berhenti mendengarkan ' + title);
+    const stopControl = document.createElement('span');
+    stopControl.hidden = true;
+    stopControl.append(stop);
+    const status = document.createElement('span');
+    status.className = 'muted';
+    status.setAttribute('role', 'status');
+    controls.append(play, stopControl, status);
+    heading.after(controls);
+
+    play.addEventListener('click', () => {
+      if (session?.play === play) {
+        if (session.paused) {
+          synth.resume();
+          session.paused = false;
+          play.textContent = 'Jeda';
+          status.textContent = 'Memutar.';
+        } else {
+          synth.pause();
+          session.paused = true;
+          play.textContent = 'Lanjutkan';
+          status.textContent = 'Dijeda.';
+        }
+        play.setAttribute('aria-label', play.textContent + ' ' + title);
+        return;
+      }
+      finish();
+      const voices = synth.getVoices();
+      const voice = voices.find(item => /^id(?:[-_]|$)/i.test(item.lang));
+      session = {play, stopControl, status, title, voice, chunks: makeChunks(blocks), index: 0, paused: false};
+      play.textContent = 'Jeda';
+      play.setAttribute('aria-label', 'Jeda ' + title);
+      stopControl.hidden = false;
+      status.textContent = 'Memutar.';
+      speakNext(session);
+    });
+    stop.addEventListener('click', () => {
+      finish('Dihentikan.');
+      play.focus();
+    });
+  }
+
+  for (const section of document.querySelectorAll('.study-section:not(#referensi)')) {
+    const children = [...section.children];
+    const chapter = children.find(node => node.matches('h2'));
+    const chapterTitle = readText(chapter);
+    const blocks = children.map(spokenBlocks);
+    addControls(chapter, blocks.flat(), chapterTitle);
+    for (const [start, heading] of children.entries()) {
+      if (!heading.matches('h3')) continue;
+      const end = children.findIndex((node, index) => index > start && node.matches('h3'));
+      const headingTitle = readText(heading).replace(/^\d+\.\d+\s+/, '');
+      addControls(heading, blocks.slice(start, end === -1 ? undefined : end).flat(), headingTitle + ' · ' + chapterTitle);
+    }
+  }
+  window.addEventListener('pagehide', () => finish());
+})();
+</script>
 </body>
 </html>
