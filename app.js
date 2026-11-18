@@ -308,11 +308,11 @@ function renderPbqSequence(q, order, selected) {
   const choices = q.tasks[0].choices;
   const picked = session.pbqPick;
   return '<p class="muted">Drag an action into a step, or select an action and then select a step.</p>' +
-    '<div class="pbq-sequence"><section><h3>Available actions</h3><div class="pbq-actions">' + order[0].map(choice =>
+    '<div class="pbq-sequence"><section><h3>' + escape(q.layout.sourceTitle || 'Available actions') + '</h3><div class="pbq-actions">' + order[0].map(choice =>
       '<button class="secondary" type="button" data-pbq-pick="' + choice + '" draggable="' + !selected.includes(choice) +
       '" aria-pressed="' + (choice === picked) + '"' + (selected.includes(choice) ? ' disabled' : '') +
       '>' + escape(choices[choice]) + '</button>').join('') + '</div></section>' +
-    '<section><h3>Steps in order</h3><ol class="pbq-slots">' + q.tasks.map((task, index) => {
+    '<section><h3>' + escape(q.layout.destinationTitle || 'Steps in order') + '</h3><ol class="pbq-slots">' + q.tasks.map((task, index) => {
       const value = selected[index];
       const filled = Number.isInteger(value);
       const slotText = filled ? choices[value] : 'Drop or place an action here';
@@ -323,19 +323,36 @@ function renderPbqSequence(q, order, selected) {
         escape(task.label) + '">×</button>' : '') + '</li>';
     }).join('') + '</ol></section></div>';
 }
+function renderIncidentMap(q, order, selected) {
+  const host = (index, address) => '<fieldset class="pbq-host"><legend>' + escape(address) +
+    '</legend><div class="pbq-server" aria-hidden="true">▤</div>' + q.tasks[index].choices.map((choice, value) =>
+      '<label><input type="radio" name="pbq-host-' + index + '" data-pbq-radio="' + index + '" value="' + value +
+      '"' + (selected[index] === value ? ' checked' : '') + '> ' + escape(choice) + '</label>').join('') + '</fieldset>';
+  return '<div class="pbq-incident" aria-label="R&D and Engineering networks connected by a firewall">' +
+    '<div class="pbq-hosts">' + host(0, '192.168.10.22') + host(1, '192.168.10.37') + host(2, '192.168.10.41') + '</div>' +
+    '<div class="pbq-network-bus">R&amp;D Network</div><div class="pbq-uplink">Int A</div>' +
+    '<div class="pbq-firewall-row"><div class="pbq-cloud">Internet</div><div class="pbq-wan">Int C</div>' +
+    '<div class="pbq-firewall">Firewall</div><div></div><div></div></div>' +
+    '<div class="pbq-uplink">Int B</div><div class="pbq-network-bus">Engineering Network</div>' +
+    '<div class="pbq-hosts">' + host(3, '10.10.9.12') + host(4, '10.10.9.18') + '</div></div>' +
+    '<div class="pbq-fields">' + renderPbqSelect(q, order, selected, 5) + '</div>';
+}
 function renderPbqFields(q, order, selected) {
   const layout = q.layout;
   const field = (index, label) => renderPbqSelect(q, order, selected, index, label);
   let content;
-  if (layout?.kind === 'sequence') {
+  if (layout?.kind === 'incident-map') {
+    content = renderIncidentMap(q, order, selected);
+  } else if (layout?.kind === 'sequence') {
     content = renderPbqSequence(q, order, selected);
   } else if (layout?.kind === 'matrix') {
     const columns = layout.headers.length;
-    content = '<div class="pbq-matrix" role="table" aria-label="Match the evidence to a decision">' +
-      '<div class="pbq-matrix-head" role="row"><span role="columnheader">Item</span>' +
+    content = '<div class="pbq-matrix' + (layout.targets ? ' pbq-attack-matrix' : '') + '" role="table" aria-label="Match the evidence to a decision">' +
+      '<div class="pbq-matrix-head" role="row"><span role="columnheader">' + (layout.targets ? 'Attack description' : 'Item') + '</span>' +
+      (layout.targets ? '<span role="columnheader">Target</span>' : '') +
       layout.headers.map(header => '<span role="columnheader">' + escape(header) + '</span>').join('') + '</div>' +
       layout.rows.map((row, i) => '<div class="pbq-matrix-row" role="row"><strong role="rowheader">' +
-        escape(row) + '</strong>' + layout.headers.map((header, j) =>
+        escape(row) + '</strong>' + (layout.targets ? '<span role="cell" class="pbq-target">' + escape(layout.targets[i]) + '</span>' : '') + layout.headers.map((header, j) =>
           '<div role="cell">' + field(i * columns + j, header) + '</div>').join('') + '</div>').join('') + '</div>';
   } else if (layout?.kind === 'topology') {
     content = '<div class="pbq-topology" aria-label="Network diagram">' + layout.layers.map(layer =>
@@ -344,7 +361,7 @@ function renderPbqFields(q, order, selected) {
   } else {
     content = '<div class="pbq-fields">' + q.tasks.map((_, index) => field(index)).join('') + '</div>';
   }
-  return '<div lang="en">' + content +
+  return '<div lang="en">' + (q.referenceNote ? '<p class="notice" lang="id">' + escape(q.referenceNote) + '</p>' : '') + content +
     '<button class="mini pbq-reset" type="button" data-action="pbq-reset">Reset answers</button></div>';
 }
 function updatePbqBoard(q, focusSelector) {
@@ -591,11 +608,14 @@ document.querySelector('.rail').addEventListener('click',event=>{
 main.addEventListener('change',event=>{
   const input = event.target;
   if (input.id==='source') { updateCount(); settings.source=input.value; render(); main.querySelector('#source').focus(); }
-  if ((input.name !== 'answer' && input.dataset?.pbqStep === undefined) || updateExamClock()) return;
+  if ((input.name !== 'answer' && input.dataset?.pbqStep === undefined && input.dataset?.pbqRadio === undefined) || updateExamClock()) return;
   const q=session.items[session.i];
   let selected;
   if (isPbq(q)) {
-    selected = [...main.querySelectorAll('[data-pbq-step]')].map(field => field.value === '' ? null : Number(field.value));
+    selected = q.layout?.kind === 'incident-map' ? q.tasks.map((_, index) => {
+      const field = main.querySelector('[data-pbq-radio="' + index + '"]:checked') || main.querySelector('[data-pbq-step="' + index + '"]');
+      return field && field.value !== '' ? Number(field.value) : null;
+    }) : [...main.querySelectorAll('[data-pbq-step]')].map(field => field.value === '' ? null : Number(field.value));
   } else {
     selected = [...main.querySelectorAll('input[name="answer"]:checked')].map(item=>Number(item.value));
     if (selected.length > q.answers.length) {
@@ -723,7 +743,7 @@ main.addEventListener('click',event=>{
 
 window.addEventListener('hashchange', applyRoute);
 
-Promise.all(['bank.json?v=5', 'supplement.json?v=2'].map(async url => {
+Promise.all(['bank.json?v=5', 'supplement.json?v=3'].map(async url => {
   const response = await fetch(url);
   if (!response.ok) throw new Error('Bank soal belum tersedia.');
   return response.json();
